@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # --- 1. Database: PostgreSQL ---
+  db:
+    image: postgres:15-alpine
+    container_name: agro_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password123}
+      POSTGRES_DB: ${DB_NAME:-agrodb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- 2. AI Trainer: Runs once to generate .pkl files ---
+  ai_init:
+    build: 
+      context: ./backend
+    container_name: agro_ai_trainer
+    volumes:
+      - ./backend/app/ai:/app/app/ai
+    command: python -m app.ai.train
+    depends_on:
+      - db
+
+  # --- 3. Backend: FastAPI + AI Inference ---
+  backend:
+    build:
+      context: ./backend
+    container_name: agro_backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password123}@db:5432/${DB_NAME:-agrodb}
+      - SECRET_KEY=${SECRET_KEY}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app/ai:/app/app/ai
+    depends_on:
+      ai_init:
+        condition: service_completed_successfully
+
+  # --- 4. Frontend: Next.js ---
+  frontend:
+    build:
+      context: ./frontend
+    container_name: agro_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
