@@ -173,11 +173,18 @@ class MarketPredictionEngine:
         # ENCODING
         # ---------------------------------------------
         if self.crop_encoder is None:
-            logger.error("Crop encoder not loaded. Returning fallback results.")
+            logger.error(
+                "Crop encoder not loaded. Returning fallback results.")
             crop_enc = crop_id
         else:
             try:
-                crop_enc = self.crop_encoder.transform([crop_id])[0]
+                crop_id_str = str(crop_id)
+                if crop_id_str in self.crop_encoder.classes_:
+                    crop_enc = self.crop_encoder.transform([crop_id_str])[0]
+                else:
+                    logger.error(
+                        f"Crop encoding failed: crop_id {crop_id} not in encoder classes.")
+                    crop_enc = crop_id  # fallback or handle as needed
             except Exception as e:
                 logger.error(f"Crop encoding failed: {e}")
                 crop_enc = crop_id

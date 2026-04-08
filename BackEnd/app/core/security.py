@@ -146,6 +146,15 @@ def check_farmer_role(
         )
     return current_user
 
+def check_buyer_role(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    if current_user.role != UserRole.BUYER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Buyer privileges required",
+        )
+    return current_user
 
 def check_admin_role(
     current_user: User = Depends(get_current_user),

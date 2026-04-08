@@ -1,3 +1,5 @@
+from pydantic import BaseModel, Field
+from app.ai.predict import market_predictor
 from typing import Any, List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -7,19 +9,24 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User, UserRole
 from app.models.buyer import Buyer, BuyerType
+
 from app.models.listing import Listing, ListingStatus
 from app.models.transaction import Transaction, TransactionStatus
+from app.models.buyer_request import BuyerRequest
+from app.schemas.buyer_request import BuyerRequestCreate, BuyerRequestRead
+from app.services.buyer_request_service import create_buyer_request
+
 
 # 🔥 AI ENGINE
-from app.ai.predict import market_predictor
 
-from pydantic import BaseModel, Field
 
-router = APIRouter( tags=["Buyer"])
+router = APIRouter(tags=["Buyer"])
 
 # ------------------------------------------------------------------
 # ROLE CHECK
 # ------------------------------------------------------------------
+
+
 def check_buyer_role(current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.BUYER:
         raise HTTPException(
@@ -31,6 +38,8 @@ def check_buyer_role(current_user: User = Depends(get_current_user)):
 # ------------------------------------------------------------------
 # SCHEMAS
 # ------------------------------------------------------------------
+
+
 class BuyerProfileUpdate(BaseModel):
     company_name: Optional[str] = None
     buyer_type: Optional[BuyerType] = None
@@ -46,6 +55,23 @@ class BuyerProfileUpdate(BaseModel):
 # ------------------------------------------------------------------
 # PROFILE
 # ------------------------------------------------------------------
+
+
+@router.post("/requests", response_model=BuyerRequestRead, status_code=201)
+def create_buyer_procurement_request(
+    request_in: BuyerRequestCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_buyer_role)
+):
+    # Ensure the buyer_id matches the current user
+    buyer = db.query(Buyer).filter(Buyer.user_id == current_user.id).first()
+    if not buyer:
+        raise HTTPException(
+            status_code=403, detail="Invalid buyer or permission denied.")
+    db_request = create_buyer_request(db, request_in, buyer.id)
+    return db_request
+
+
 @router.get("/me", response_model=Any)
 def get_buyer_profile(
     db: Session = Depends(get_db),
@@ -72,6 +98,7 @@ def get_buyer_profile(
         "joined_at": buyer.created_at
     }
 
+
 @router.patch("/me", response_model=Any)
 def update_buyer_profile(
     profile_in: BuyerProfileUpdate,
@@ -93,6 +120,8 @@ def update_buyer_profile(
 # ------------------------------------------------------------------
 # BUYER ANALYTICS
 # ------------------------------------------------------------------
+
+
 @router.get("/stats", response_model=Dict[str, Any])
 def get_buyer_analytics(
     db: Session = Depends(get_db),
@@ -133,6 +162,8 @@ def get_buyer_analytics(
 # ------------------------------------------------------------------
 # MARKET AVAILABILITY SNAPSHOT
 # ------------------------------------------------------------------
+
+
 @router.get("/market-glance")
 def get_market_availability(
     db: Session = Depends(get_db),
@@ -168,6 +199,8 @@ def get_market_availability(
 # ------------------------------------------------------------------
 # 🔥 AI PRICE & PROCUREMENT INTELLIGENCE
 # ------------------------------------------------------------------
+
+
 @router.get("/ai-price-insight")
 def buyer_ai_price_insight(
     crop_id: int,
@@ -208,6 +241,8 @@ def buyer_ai_price_insight(
 # ------------------------------------------------------------------
 # 🔥 AI BULK PURCHASE RISK ANALYSIS
 # ------------------------------------------------------------------
+
+
 @router.get("/ai-bulk-risk")
 def bulk_purchase_risk(
     crop_id: int,

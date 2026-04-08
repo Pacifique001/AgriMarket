@@ -6,6 +6,8 @@ from app.models.listing import Listing, ListingStatus
 from app.models.buyer import Buyer
 from app.models.match import Match, MatchStatus
 from app.utils.distance import calculate_haversine_distance
+from app.ai.fraud_detector import FraudDetector
+
 
 # 🔥 Market AI
 from app.ai.predict import market_predictor
@@ -85,7 +87,8 @@ class MatchingService:
         # 4. FRESHNESS & URGENCY (10%)
         # ---------------------------------------------
         if listing.harvest_date:
-            days_since_harvest = (datetime.utcnow().date() - listing.harvest_date).days
+            days_since_harvest = (
+                datetime.utcnow().date() - listing.harvest_date).days
             if days_since_harvest <= 3:
                 score += 0.1
                 reasons.append("Fresh harvest")
@@ -180,5 +183,16 @@ class MatchingService:
                     status=MatchStatus.PENDING,
                     match_reason=", ".join(reasons)
                 ))
+        # ---------------------------------------------
+        # FRAUD RISK PENALTY
+        # ---------------------------------------------
+        buyer_risk = FraudDetector.assess_buyer_risk(
+            db=db,  # safe: does not require DB here
+            buyer=buyer
+        )
+
+        if buyer_risk > 0.6:
+            score *= 0.6
+        reasons.append("Risk-adjusted buyer")
 
         db.commit()

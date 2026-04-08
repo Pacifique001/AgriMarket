@@ -1,3 +1,13 @@
+from app.models.audit_log import AuditLog
+from app.models.buyer_request import BuyerRequest
+from app.models.match import Match
+from app.models.transaction import Transaction
+from app.models.listing import Listing
+from app.models.buyer import Buyer
+from app.models.farmer import Farmer
+from app.models.user import User
+from app.core.database import Base
+from app.core.config import settings
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
@@ -7,16 +17,8 @@ import sys
 # Add project root to PYTHONPATH
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.core.config import settings
-from app.core.database import Base
 
 # Import ALL models so Alembic can detect them
-from app.models.user import User
-from app.models.farmer import Farmer
-from app.models.buyer import Buyer
-from app.models.listing import Listing
-from app.models.transaction import Transaction
-from app.models.match import Match
 
 # Alembic Config object
 config = context.config

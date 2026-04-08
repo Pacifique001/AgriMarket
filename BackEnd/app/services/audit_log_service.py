@@ -27,11 +27,10 @@ class AuditLogService:
     ) -> None:
         try:
             entry = AuditLog(
-                user_id=user.id if user else None,
-                user_role=user.role if user else None,
+                actor_user_id=user.id if user else None,
                 action=action,
-                resource=resource,
-                resource_id=resource_id,
+                entity_type=resource,
+                entity_id=resource_id,
                 ip_address=ip_address,
                 user_agent=user_agent,
             )

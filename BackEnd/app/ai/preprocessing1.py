@@ -8,7 +8,7 @@ PROCESSED_DIR = "app/ai/datasets/processed"
 RWANDA_DTA = "AHS2024_Section3_4_CROP GROWN, SEEDS AND PRODUCTION & AGRICULTURAL INPUTS AND PRACTICES.dta"
 NIGERIA_CSV = "nigerian_market_prices.csv"
 
-OUT_FILE = os.path.join(PROCESSED_DIR, "unified_demand_history.csv")
+OUT_FILE = os.path.join(PROCESSED_DIR, "demand_history.csv")
 
 def ensure_dirs():
     os.makedirs(PROCESSED_DIR, exist_ok=True)
@@ -80,7 +80,7 @@ def build_unified_dataset():
     unified = pd.concat([rwanda, nigeria], ignore_index=True)
 
     unified.to_csv(OUT_FILE, index=False)
-    print(f"✅ Unified demand dataset saved → {OUT_FILE}")
+    print(f"✅ Demand dataset saved → {OUT_FILE}")
     print(unified.head())
 
 if __name__ == "__main__":

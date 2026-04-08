@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -27,7 +27,7 @@ class FraudDetector:
         Returns risk score from 0.0 (safe) → 1.0 (high risk)
         """
         risk = 0.0
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # 1️⃣ Excessive matches without transactions
         match_count = db.query(Match).filter(
@@ -45,7 +45,7 @@ class FraudDetector:
         # 2️⃣ Repeated cancelled / failed transactions
         failed_tx = db.query(Transaction).filter(
             Transaction.buyer_id == buyer.id,
-            Transaction.status.in_(["cancelled", "failed"])
+            Transaction.status.in_(["cancelled", "disputed"])
         ).count()
 
         if failed_tx >= 3:

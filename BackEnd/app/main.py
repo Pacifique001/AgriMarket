@@ -1,4 +1,5 @@
 
+from slowapi.middleware import SlowAPIMiddleware
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -11,7 +12,8 @@ from app.core.config import settings
 
 
 # --- Security: Rate Limiting ---
-limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute", "1000/hour"])
+limiter = Limiter(key_func=get_remote_address,
+                  default_limits=["100/minute", "1000/hour"])
 
 app = FastAPI(title=settings.PROJECT_NAME)
 app.state.limiter = limiter
@@ -20,13 +22,15 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # --- Security: CORS Policy ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Set to your frontend domain
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
 # --- Security: HTTP Headers Middleware ---
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response: Response = await call_next(request)
@@ -38,9 +42,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = "default-src 'self'"
         return response
 
+
 app.add_middleware(SecurityHeadersMiddleware)
 
-from slowapi.middleware import SlowAPIMiddleware
 app.add_middleware(SlowAPIMiddleware)
 
 app.include_router(

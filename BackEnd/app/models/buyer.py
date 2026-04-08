@@ -23,11 +23,13 @@ class Buyer(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # Auth link
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"),
+                     unique=True, nullable=False)
 
     # Business info
     company_name = Column(String(200), nullable=True)
-    buyer_type = Column(Enum(BuyerType), default=BuyerType.INDIVIDUAL, nullable=False)
+    buyer_type = Column(
+        Enum(BuyerType), default=BuyerType.INDIVIDUAL, nullable=False)
 
     # Trust & verification
     is_verified = Column(Boolean, default=False)
@@ -36,6 +38,11 @@ class Buyer(Base):
     fraud_score = Column(Float, default=0.0)     # 0.0 (safe) → 1.0 (high risk)
     trust_score = Column(Float, default=0.5)     # 0.0 → 1.0
     last_activity_at = Column(DateTime(timezone=True), nullable=True)
+
+    successful_transactions = Column(Integer, default=0)
+    failed_transactions = Column(Integer, default=0)
+    average_response_time_min = Column(Float, nullable=True)
+    risk_score = Column(Float, default=0.0)
 
     # Location preferences
     preferred_districts = Column(String(500), nullable=True)
@@ -57,6 +64,13 @@ class Buyer(Base):
 
     matches = relationship(
         "Match",
+        back_populates="buyer",
+        cascade="all, delete-orphan"
+    )
+
+    # Relationship to BuyerRequest
+    requests = relationship(
+        "BuyerRequest",
         back_populates="buyer",
         cascade="all, delete-orphan"
     )

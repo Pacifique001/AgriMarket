@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
+
 class TransactionStatus(str, enum.Enum):
     """
     Defines the current state of the physical trade.
@@ -14,6 +15,7 @@ class TransactionStatus(str, enum.Enum):
     CANCELLED = "cancelled"       # Transaction aborted after agreement
     DISPUTED = "disputed"         # Problem with quality or quantity
 
+
 class PaymentStatus(str, enum.Enum):
     """
     Tracks the financial state of the transaction.
@@ -23,6 +25,7 @@ class PaymentStatus(str, enum.Enum):
     PAID = "paid"
     REFUNDED = "refunded"
 
+
 class Transaction(Base):
     """
     The Transaction model.
@@ -31,11 +34,11 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
-    
+
     # Links to the "Handshake" that started this
     match_id = Column(Integer, ForeignKey("matches.id"), nullable=False)
-    
-    # Direct links for fast querying and history 
+
+    # Direct links for fast querying and history
     # (even if a listing is deleted later, the transaction record persists)
     listing_id = Column(Integer, ForeignKey("listings.id"), nullable=False)
     farmer_id = Column(Integer, ForeignKey("farmers.id"), nullable=False)
@@ -44,20 +47,20 @@ class Transaction(Base):
     # Final Agreement Data (May differ from original listing)
     quantity_kg = Column(Float, nullable=False)
     price_per_kg = Column(Float, nullable=False)
-    total_amount = Column(Float, nullable=False) # quantity * price
-    
+    total_amount = Column(Float, nullable=False)  # quantity * price
+
     # Status Management
     status = Column(
-        Enum(TransactionStatus), 
-        default=TransactionStatus.PENDING, 
+        Enum(TransactionStatus),
+        default=TransactionStatus.PENDING,
         nullable=False
     )
     payment_status = Column(
-        Enum(PaymentStatus), 
-        default=PaymentStatus.UNPAID, 
+        Enum(PaymentStatus),
+        default=PaymentStatus.UNPAID,
         nullable=False
     )
-    
+
     # Logistics Tracking
     delivery_note = Column(String(500), nullable=True)
     receipt_number = Column(String(100), unique=True, nullable=True)
