@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 const registerSchema = z.object({
   full_name: z.string().min(3, "Full name must be at least 3 characters"),
   phone: z.string().min(10, "Invalid phone number format"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72, "Password must be 72 characters or fewer"),
   role: z.enum(["farmer", "buyer"]),
 });
 

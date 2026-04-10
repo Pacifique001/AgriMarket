@@ -34,6 +34,12 @@ router = APIRouter()
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     try:
+        if len(user_in.password.encode("utf-8")) > 72:
+            raise HTTPException(
+                status_code=400,
+                detail="Password must be 72 bytes or fewer.",
+            )
+
         existing = db.query(User).filter(User.phone == user_in.phone).first()
         if existing:
             raise HTTPException(
