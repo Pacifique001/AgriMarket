@@ -45,7 +45,7 @@ def get_matches_for_listing(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # 🔥 Generate / refresh matches
-    MatchingService.generate_matches_for_listing(db, listing)
+    MatchingService.generate_matches_for_listing(db, listing.id)
 
     matches = (
         db.query(Match)
