@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* 1. Theme Configuration in v4 */
+@theme {
+  --color-primary: #15803d;
+  --color-secondary: #f59e0b;
+  
+  /* Tailwind v4 automatically maps colors, but you can define custom ones here */
+}
+
+/* 2. Base Styles */
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        rgb(255, 255, 255)
+      )
+      rgb(248, 250, 252);
+    min-height: 100vh;
+  }
+}
+
+/* 3. Component Utilities (Modern v4 approach) */
+@utility btn-primary {
+  @apply bg-green-700 hover:bg-green-800 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-md active:scale-95;
+}
+
+@utility card {
+  @apply bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden;
+}
+
+@utility input-field {
+  @apply w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all;
+}

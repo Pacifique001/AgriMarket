@@ -1,3 +1,4 @@
 # Ignore large dataset
 BackEnd/app/ai/datasets/raw/AHS2024_Section3_4_CROP.dta
 .env
+.env.example
