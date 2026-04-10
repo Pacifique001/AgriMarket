@@ -17,7 +17,7 @@
 4. Set secret env vars in Render dashboard:
    - `SECRET_KEY`
    - `DATABASE_URL`
-   - `BACKEND_CORS_ORIGINS` (example: `https://your-frontend.vercel.app`)
+   - `BACKEND_CORS_ORIGINS` (include your live Vercel origin, for example `https://pacifiquesynergy-agri-market.vercel.app,http://localhost:3000,http://127.0.0.1:3000`)
    - `TWILIO_ACCOUNT_SID`
    - `TWILIO_AUTH_TOKEN`
    - `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID`
@@ -32,7 +32,7 @@
 4. Deploy.
 
 ## 4) CORS and Production Wiring
-- Ensure backend `BACKEND_CORS_ORIGINS` includes your Vercel domain.
+- Ensure backend `BACKEND_CORS_ORIGINS` includes your Vercel domain, especially `https://pacifiquesynergy-agri-market.vercel.app`.
 - If you use a custom domain, add it too.
 
 ## 5) Twilio Setup
