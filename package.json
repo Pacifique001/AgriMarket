@@ -1,4 +1,8 @@
 {
+	"private": true,
+	"scripts": {
+		"build": "pnpm --dir FrontEnd install --frozen-lockfile && pnpm --dir FrontEnd run build"
+	},
 	"dependencies": {
 		"@tanstack/react-query": "^5.90.12",
 		"clsx": "^2.1.1",

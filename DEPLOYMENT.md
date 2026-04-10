@@ -26,7 +26,7 @@
 
 ## 3) Deploy Frontend (Vercel)
 1. In Vercel: New Project -> import repository.
-2. Set Root Directory to `FrontEnd/frontend`.
+2. Set Root Directory to `FrontEnd`.
 3. Add environment variable:
    - `NEXT_PUBLIC_API_URL=https://<your-render-url>/api/v1`
 4. Deploy.
@@ -49,7 +49,7 @@ Optional toggle:
 
 ## 6) Local Environment Files
 - Backend template: [BackEnd/.env.example](BackEnd/.env.example)
-- Frontend template: [FrontEnd/frontend/.env.example](FrontEnd/frontend/.env.example)
+- Frontend template: [FrontEnd/.env.example](FrontEnd/.env.example)
 
 ## 7) Common Checks
 - Backend health: `/docs` loads.
