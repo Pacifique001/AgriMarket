@@ -23,9 +23,9 @@ class Settings(BaseSettings):
     # =====================================================
     # 3. DATABASE (BUILT FROM .env)
     # =====================================================
-    DB_USER: str
-    DB_PASSWORD: str
-    DB_NAME: str
+    DB_USER: str | None = None
+    DB_PASSWORD: str | None = None
+    DB_NAME: str | None = None
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
 
@@ -36,12 +36,17 @@ class Settings(BaseSettings):
     def assemble_database_url(cls, v, info):
         if v:
             return v
+        db_user = info.data.get("DB_USER")
+        db_password = info.data.get("DB_PASSWORD")
+        db_name = info.data.get("DB_NAME")
+        if not all([db_user, db_password, db_name]):
+            return None
         return (
-            f"postgresql://{info.data['DB_USER']}:"
-            f"{info.data['DB_PASSWORD']}@"
+            f"postgresql://{db_user}:"
+            f"{db_password}@"
             f"{info.data['DB_HOST']}:"
             f"{info.data['DB_PORT']}/"
-            f"{info.data['DB_NAME']}"
+            f"{db_name}"
         )
 
     # =====================================================
