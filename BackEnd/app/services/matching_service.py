@@ -160,12 +160,21 @@ class MatchingService:
         if not buyer:
             return
 
+        buyer_risk = FraudDetector.assess_buyer_risk(
+            db=db,  # safe: does not require DB here
+            buyer=buyer
+        )
+
         listings = db.query(Listing).filter(
             Listing.status == ListingStatus.AVAILABLE
         ).all()
 
         for listing in listings:
             score, reasons = cls._calculate_match_score(listing, buyer)
+
+            if buyer_risk > 0.6:
+                score *= 0.6
+                reasons.append("Risk-adjusted buyer")
 
             if score < cls.MIN_MATCH_SCORE:
                 continue
@@ -183,16 +192,5 @@ class MatchingService:
                     status=MatchStatus.PENDING,
                     match_reason=", ".join(reasons)
                 ))
-        # ---------------------------------------------
-        # FRAUD RISK PENALTY
-        # ---------------------------------------------
-        buyer_risk = FraudDetector.assess_buyer_risk(
-            db=db,  # safe: does not require DB here
-            buyer=buyer
-        )
-
-        if buyer_risk > 0.6:
-            score *= 0.6
-        reasons.append("Risk-adjusted buyer")
 
         db.commit()
