@@ -5,6 +5,7 @@ alembic
 python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
+twilio
 pandas
 scikit-learn
 joblib

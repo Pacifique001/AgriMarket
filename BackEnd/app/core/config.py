@@ -75,9 +75,10 @@ class Settings(BaseSettings):
     # =====================================================
     # 6. SMS / TWILIO
     # =====================================================
-    TWILIO_ACCOUNT_SID: str
-    TWILIO_AUTH_TOKEN: str
-    TWILIO_FROM_NUMBER: str
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_FROM_NUMBER: str = ""
+    TWILIO_MESSAGING_SERVICE_SID: str = ""
 
     SMS_ENABLED: bool = os.getenv("SMS_ENABLED", "true").lower() == "true"
 
