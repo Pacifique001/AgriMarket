@@ -16,14 +16,15 @@ import {
   BrainCircuit,
   ArrowRight,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  MessageSquare
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 // Modular Services & Hooks
 import { matchingService } from "@/services/matching";
-import { listingsService } from "@/services/listings"; // Used for fetching unit suggestions
 import { useUser, BuyerProfile } from "@/hooks/useUser";
+import { BargainModal } from "@/components/BargainModal";
 import { cn } from "@/lib/utils";
 import api from "@/services/api";
 
@@ -41,6 +42,8 @@ export default function BuyerRequestsPage() {
   const queryClient = useQueryClient();
   const { isBuyer, isLoading: userLoading, profile } = useUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeBargainMatch, setActiveBargainMatch] = useState<any>(null);
+
   const buyerProfile = isBuyer ? (profile as BuyerProfile) : null;
 
   // 2. Query: Fetch active procurement matches (Demand-based suggestions)
@@ -54,15 +57,13 @@ export default function BuyerRequestsPage() {
   const { register, handleSubmit, formState: { errors }, reset } = useForm<RequestFormValues>({
     resolver: zodResolver(requestSchema),
     defaultValues: {
-      preferred_district: buyerProfile?.base_district || "" // Fixed!
+      preferred_district: buyerProfile?.base_district || ""
     }
   });
 
   // 4. Mutation: Post New Procurement Demand
   const postRequestMutation = useMutation({
     mutationFn: async (data: RequestFormValues) => {
-      // In our architecture, posting demand creates a 'BuyerRequest' record
-      // that the Matching Service scans.
       const res = await api.post("/buyers/requests", data);
       return res.data;
     },
@@ -125,7 +126,7 @@ export default function BuyerRequestsPage() {
               </button>
             </div>
           ) : (
-            requests.map((match: any) => (
+            requests?.map((match: any) => (
               <div key={match.id} className="card p-6 hover:border-green-300 transition-all flex flex-col md:flex-row gap-6 items-start md:items-center group">
                 <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
                   <ClipboardList size={24} />
@@ -133,7 +134,9 @@ export default function BuyerRequestsPage() {
 
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-lg font-bold text-slate-900">Demand for {match.listing?.crop_type || "Produce"}</h3>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Demand for {match.crop_type || match.listing?.crop_type || "Harvest"}
+                    </h3>
                     <span className={cn(
                       "text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest border",
                       match.status === "interested" ? "bg-green-50 text-green-700 border-green-100" : "bg-blue-50 text-blue-700 border-blue-100"
@@ -142,9 +145,15 @@ export default function BuyerRequestsPage() {
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500 font-medium">
-                    <span className="flex items-center gap-1.5"><Scale size={14} className="text-slate-400" /> {match.listing?.quantity_kg?.toLocaleString()} kg</span>
-                    <span className="flex items-center gap-1.5"><MapPin size={14} className="text-slate-400" /> {match.other_party_district}</span>
-                    <span className="flex items-center gap-1.5"><Clock size={14} className="text-slate-400" /> {new Date(match.created_at).toLocaleDateString()}</span>
+                    <span className="flex items-center gap-1.5">
+                      <Scale size={14} className="text-slate-400" /> {(match.quantity_kg || match.listing?.quantity_kg || 0).toLocaleString()} kg
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <MapPin size={14} className="text-slate-400" /> {match.other_party_district}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={14} className="text-slate-400" /> {new Date(match.created_at).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
 
@@ -153,8 +162,11 @@ export default function BuyerRequestsPage() {
                     <BrainCircuit size={16} className="text-green-700" />
                     <span className="text-xs font-black text-green-800">AI Match: {Math.round(match.match_score * 100)}%</span>
                   </div>
-                  <button className="w-full md:w-fit px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95">
-                    View Potential Suppliers
+                  <button
+                    onClick={() => setActiveBargainMatch(match)}
+                    className="w-full md:w-fit px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <MessageSquare size={14} /> Negotiate / Bargain
                   </button>
                 </div>
               </div>
@@ -219,10 +231,6 @@ export default function BuyerRequestsPage() {
                   {...register("max_price_per_kg", { valueAsNumber: true })}
                   className="input-field text-lg font-black text-green-700"
                 />
-                <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1 font-medium">
-                  <BrainCircuit size={12} className="text-green-600" />
-                  AI insight: Current average market price is <span className="font-bold text-slate-700">310 RWF/kg</span>.
-                </p>
               </div>
 
               <div className="flex gap-4 pt-6">
@@ -248,6 +256,23 @@ export default function BuyerRequestsPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* --- Bargain & Chat Modal for Buyer Requests --- */}
+      {activeBargainMatch && (
+        <BargainModal
+          isOpen={!!activeBargainMatch}
+          onClose={() => setActiveBargainMatch(null)}
+          matchId={activeBargainMatch.id}
+          listingCrop={activeBargainMatch.crop_type || activeBargainMatch.listing?.crop_type || "Harvest"}
+          listingQuantity={activeBargainMatch.quantity_kg || activeBargainMatch.listing?.quantity_kg}
+          listingAskingPrice={activeBargainMatch.asking_price || activeBargainMatch.listing?.asking_price}
+          listingDistrict={activeBargainMatch.other_party_district}
+          otherPartyName={activeBargainMatch.other_party_name || "Farmer"}
+          otherPartyPhone={activeBargainMatch.other_party_phone}
+          otherPartyRole="Farmer"
+          currentMatchStatus={activeBargainMatch.status}
+        />
       )}
     </div>
   );

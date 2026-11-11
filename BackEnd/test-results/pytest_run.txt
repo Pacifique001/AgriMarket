@@ -1,0 +1,99 @@
+﻿.......................................................................  [100%]
+============================== warnings summary ===============================
+app\schemas\buyer_request.py:18
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\buyer_request.py:18: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class BuyerRequestRead(BuyerRequestBase):
+
+..\.venv\Lib\site-packages\pydantic\_internal\_config.py:383
+  P:\AI Farmer-Market Connection System\.venv\Lib\site-packages\pydantic\_internal\_config.py:383: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+app\schemas\listing.py:14
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\listing.py:14: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    crop_type: str = Field(..., example="Maize", description="Type of crop being sold")
+
+app\schemas\listing.py:15
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\listing.py:15: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    crop_id: int = Field(..., example=1, description="The ID of the crop from the crops table")
+
+app\schemas\listing.py:16
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\listing.py:16: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    quantity_kg: float = Field(..., gt=0, example=500.0, description="Quantity in Kilograms")
+
+app\schemas\listing.py:17
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\listing.py:17: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    district: str = Field(..., example="Musanze")
+
+app\schemas\listing.py:18
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\listing.py:18: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    sector: Optional[str] = Field(None, example="Kinigi")
+
+app\schemas\listing.py:20
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\listing.py:20: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    image_url: Optional[str] = Field(None, example="https://example.com/image.jpg")
+
+app\schemas\listing.py:44
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\listing.py:44: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    asking_price: float = Field(..., gt=0, example=350.0, description="Farmer's desired price per KG")
+
+app\schemas\listing.py:89
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\listing.py:89: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    reasoning: str = Field(..., example="High demand in Kigali and low seasonal supply.")
+
+app\schemas\match.py:15
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\match.py:15: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    match_score: float = Field(
+
+app\schemas\match.py:22
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\match.py:22: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    match_reason: Optional[str] = Field(
+
+app\schemas\match.py:73
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\match.py:73: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    other_party_name: str = Field(..., example="Kigali Serena Hotel")
+
+app\schemas\match.py:74
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\match.py:74: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    other_party_district: str = Field(..., example="Nyarugenge")
+
+app\schemas\match.py:75
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\match.py:75: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    distance_km: Optional[float] = Field(None, example=12.5)
+
+app\schemas\transaction.py:11
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\transaction.py:11: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TransactionRead(BaseModel):
+
+app\schemas\audit_log.py:6
+  P:\AI Farmer-Market Connection System\BackEnd\app\schemas\audit_log.py:6: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class AuditLogRead(BaseModel):
+
+app/tests/test_api.py::test_login_success
+app/tests/test_api.py::test_create_listing_with_ai
+app/tests/test_api.py::test_admin_ai_market_insight
+app/tests/test_api.py::test_buyer_role_restriction
+app/tests/test_unit_helpers.py::SecurityHelpersTest::test_create_access_token_encodes_expected_claims
+  P:\AI Farmer-Market Connection System\BackEnd\app\core\security.py:44: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+app/tests/test_api.py::test_login_success
+  P:\AI Farmer-Market Connection System\.venv\Lib\site-packages\_pytest\python.py:170: PytestReturnNotNoneWarning: Test functions should return None, but app/tests/test_api.py::test_login_success returned <class 'str'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+app/tests/test_api.py::test_create_listing_with_ai
+app/tests/test_api.py::test_admin_ai_market_insight
+  P:\AI Farmer-Market Connection System\BackEnd\app\ai\predict.py:164: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    month = datetime.utcnow().month
+
+app/tests/test_ml_inference.py::test_pricing_service_integration
+  P:\AI Farmer-Market Connection System\BackEnd\app\services\pricing_service.py:84: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    month = datetime.utcnow().month
+
+app/tests/test_unit_services.py::MatchingServiceTest::test_calculate_match_score_combines_matching_signals
+  P:\AI Farmer-Market Connection System\BackEnd\app\services\matching_service.py:91: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    datetime.utcnow().date() - listing.harvest_date).days
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

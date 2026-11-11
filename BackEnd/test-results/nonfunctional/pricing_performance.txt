@@ -1,0 +1,16 @@
+PricingService performance run
+Model artifacts report:
+- price_model_loaded: True
+- demand_model_loaded: True
+- encoders_loaded: True
+- dataset_loaded: True
+- using_mock: False
+
+Single-call samples: 20
+Avg latency (s): 0.056751
+Min latency (s): 0.051758
+Max latency (s): 0.085714
+
+Sequential throughput test (100 runs):
+Avg latency (s): 0.055890
+Throughput (ops/s): 1789.22

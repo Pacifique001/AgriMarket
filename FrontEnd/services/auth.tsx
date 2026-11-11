@@ -1,5 +1,12 @@
 import api from "./api";
 
+type RegisterPayload = {
+  full_name: string;
+  phone: string;
+  password: string;
+  role: "farmer" | "buyer";
+};
+
 /**
  * AuthService
  * Handles all authentication-related API requests.
@@ -25,7 +32,7 @@ export const authService = {
    * 
    * @param userData - Object containing full_name, phone, password, and role.
    */
-  async register(userData: any) {
+  async register(userData: RegisterPayload) {
     const response = await api.post("/auth/register", userData);
     return response.data;
   },

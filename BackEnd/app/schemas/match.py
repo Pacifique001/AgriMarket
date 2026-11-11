@@ -43,6 +43,16 @@ class MatchUpdate(BaseModel):
     is_notified_farmer: Optional[bool] = None
     is_notified_buyer: Optional[bool] = None
 
+class ExpressInterestRequest(BaseModel):
+    """
+    Schema for buyer expressing interest directly in a listing.
+    """
+    listing_id: int
+    offered_price: Optional[float] = None
+    offered_quantity: Optional[float] = None
+    message: Optional[str] = None
+    proposed_location: Optional[str] = None
+
 # ------------------------------------------------------------------
 # OUTPUT SCHEMAS (Data going to Frontend)
 # ------------------------------------------------------------------
@@ -66,13 +76,17 @@ class MatchRead(MatchBase):
 # ------------------------------------------------------------------
 class MatchDetail(MatchRead):
     """
-    A more descriptive schema that might include basic info about the 
-    other party to show on the dashboard without extra API calls.
+    A descriptive schema including basic info about the other party
+    and listing details for seamless display in dashboards.
     """
-    # These would be populated via JOINs in the service layer
     other_party_name: str = Field(..., example="Kigali Serena Hotel")
     other_party_district: str = Field(..., example="Nyarugenge")
+    other_party_phone: Optional[str] = Field(None, example="+250788123456")
+    explanation: Optional[str] = Field(None, example="High buyer demand and nearby supply")
     distance_km: Optional[float] = Field(None, example=12.5)
+    crop_type: Optional[str] = None
+    quantity_kg: Optional[float] = None
+    asking_price: Optional[float] = None
 
 class MatchSummary(BaseModel):
     """

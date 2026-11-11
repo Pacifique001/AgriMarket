@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: Annotated[List[str], NoDecode] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://pacifiquesynergy-agri-market.vercel.app",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")

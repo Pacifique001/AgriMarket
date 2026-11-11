@@ -1,12 +1,10 @@
 import Link from "next/link";
 import {
-  Sprout,
   TrendingUp,
   Users,
   ShieldCheck,
   ArrowRight,
-  BarChart3,
-  Globe2
+  BarChart3
 } from "lucide-react";
 
 export default function HomePage() {
@@ -79,7 +77,7 @@ export default function HomePage() {
               <h3 className="text-xl font-bold mb-3">Smart Matching</h3>
               <p className="text-slate-600">
                 Our engine instantly matches your harvest with verified buyers looking for
-                exactly what you've grown, based on your location.
+                exactly what you&apos;ve grown, based on your location.
               </p>
             </div>
 
@@ -126,7 +124,7 @@ export default function HomePage() {
 
           <div className="relative">
             <div className="absolute -inset-4 bg-green-200/50 rounded-2xl blur-xl"></div>
-            <div className="relative card aspect-video bg-[url('https://images.unsplash.com/photo-1595841696677-54897f2893c3?auto=format&fit=crop&q=80&w=1200')] bg-cover bg-center">
+            <div className="relative card aspect-video bg-[url('https://rwandainspirer.com/wp-content/uploads/2018/05/potatoes-800x445.jpg')] bg-cover bg-center">
               {/* Overlay for data visualization feel */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
                 <div className="bg-white/90 backdrop-blur p-4 rounded-lg w-fit">

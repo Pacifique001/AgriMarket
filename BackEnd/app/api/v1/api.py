@@ -8,8 +8,8 @@ from app.api.v1.listings import router as listings_router
 from app.api.v1.matching import router as matching_router
 from app.api.v1.transactions import router as transactions_router
 from app.api.v1.analytics import router as analytics_router
-#from app.api.v1.admin.audit_logs import router as audit_logs_router
 from app.api.v1.admin_audit_logs import router as admin_audit_logs_router
+from app.api.v1.messages import router as messages_router
 
 api_router = APIRouter()
 
@@ -48,6 +48,13 @@ api_router.include_router(
     tags=["AI Matching"]
 )
 
+# ================= BARGAINING & MESSAGES =================
+api_router.include_router(
+    messages_router,
+    prefix="/messages",
+    tags=["Negotiation & Messaging"]
+)
+
 # ================= TRANSACTIONS =================
 api_router.include_router(
     transactions_router,
@@ -63,8 +70,6 @@ api_router.include_router(
 )
 
 # ================= ADMIN =================
-
-
 api_router.include_router(
     admin_audit_logs_router,
     prefix="/admin",

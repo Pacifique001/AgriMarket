@@ -1,0 +1,9 @@
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+pytest-mock
+faker
+factory-boy
+bandit
+pip-audit

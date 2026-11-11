@@ -118,7 +118,8 @@ def get_farmer_stats(
         "active_listings": active_listings,
         "total_volume_sold_kg": total_volume_sold,
         "total_revenue_rwf": total_revenue,
-        "unique_buyers": unique_buyers
+        "unique_buyers": unique_buyers,
+        "market_reach": unique_buyers
     }
 
 # ------------------------------------------------------------------

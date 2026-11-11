@@ -1,4 +1,4 @@
-
+from contextlib import asynccontextmanager
 from slowapi.middleware import SlowAPIMiddleware
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,15 +7,38 @@ from starlette.responses import Response
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+
+from app.core.database import Base, engine
+# Explicitly import all models so Base has them registered
+import app.models.user
+import app.models.farmer
+import app.models.buyer
+import app.models.listing
+import app.models.match
+import app.models.transaction
+import app.models.buyer_request
+import app.models.audit_log
+import app.models.message
+
 from app.api.v1.api import api_router
 from app.core.config import settings
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure all tables exist in database
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"[WARN] Database metadata sync failed: {e}")
+    yield
 
 
 # --- Security: Rate Limiting ---
 limiter = Limiter(key_func=get_remote_address,
                   default_limits=["100/minute", "1000/hour"])
 
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

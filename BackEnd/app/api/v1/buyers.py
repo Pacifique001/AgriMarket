@@ -173,20 +173,23 @@ def get_market_availability(
         Buyer.user_id == current_user.id
     ).first()
 
-    districts = (
+    raw_districts = (
         [d.strip() for d in buyer.preferred_districts.split(",")]
         if buyer.preferred_districts
-        else [buyer.base_district]
+        else ([buyer.base_district] if buyer.base_district else [])
     )
+    districts = [d for d in raw_districts if d]
 
-    available_stock = db.query(
+    query = db.query(
         Listing.crop_type,
         func.sum(Listing.quantity_kg).label("total_kg"),
         func.count(Listing.id).label("offer_count")
-    ).filter(
-        Listing.district.in_(districts),
-        Listing.status == ListingStatus.AVAILABLE
-    ).group_by(Listing.crop_type).all()
+    ).filter(Listing.status == ListingStatus.AVAILABLE)
+
+    if districts:
+        query = query.filter(Listing.district.in_(districts))
+
+    available_stock = query.group_by(Listing.crop_type).all()
 
     return [
         {
@@ -219,7 +222,7 @@ def buyer_ai_price_insight(
 
     pred = market_predictor.predict(
         crop_id=crop_id,
-        region_id=buyer.base_district
+        region_id=buyer.base_district or "Rwanda"
     )
 
     negotiation = "NEUTRAL"
@@ -258,7 +261,7 @@ def bulk_purchase_risk(
         Buyer.user_id == current_user.id
     ).first()
 
-    pred = market_predictor.predict(crop_id, buyer.base_district)
+    pred = market_predictor.predict(crop_id, buyer.base_district or "Rwanda")
 
     risk = "LOW"
     if requested_qty_kg > pred["predicted_demand_kg"]:

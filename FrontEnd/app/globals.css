@@ -1,9 +1,12 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap");
 
 /* 1. Theme Configuration in v4 */
 @theme {
   --color-primary: #15803d;
   --color-secondary: #f59e0b;
+  --font-sans: "Manrope", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-display: "Sora", "Manrope", "Segoe UI", sans-serif;
   
   /* Tailwind v4 automatically maps colors, but you can define custom ones here */
 }
@@ -19,6 +22,15 @@
       )
       rgb(248, 250, 252);
     min-height: 100vh;
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
 }
 
@@ -33,4 +45,40 @@
 
 @utility input-field {
   @apply w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all;
+}
+
+@utility auth-fade-up {
+  animation: authFadeUp 0.68s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@utility auth-stagger-1 {
+  animation-delay: 60ms;
+}
+
+@utility auth-stagger-2 {
+  animation-delay: 120ms;
+}
+
+@utility auth-stagger-3 {
+  animation-delay: 180ms;
+}
+
+@utility auth-stagger-4 {
+  animation-delay: 240ms;
+}
+
+@utility auth-stagger-5 {
+  animation-delay: 300ms;
+}
+
+@keyframes authFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

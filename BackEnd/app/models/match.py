@@ -1,5 +1,4 @@
 import enum
-# from sqlalchemy import Column, Integer, Float, ForeignKey, DateTime, Enum, Boolean,String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -68,6 +67,12 @@ class Match(Base):
     # Relationships
     listing = relationship("Listing", back_populates="matches")
     buyer = relationship("Buyer", back_populates="matches")
+    messages = relationship(
+        "Message",
+        back_populates="match",
+        cascade="all, delete-orphan",
+        order_by="Message.created_at"
+    )
 
     def __repr__(self):
         return (

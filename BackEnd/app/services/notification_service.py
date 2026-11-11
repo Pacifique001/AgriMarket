@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.match import Match
 from app.models.transaction import Transaction
 from app.models.farmer import Farmer
+from app.models.user import User
 from app.services.farmer_insight_service import FarmerInsightService
 from app.utils.sms import send_sms
 
@@ -91,18 +92,80 @@ class NotificationService:
         farmer = listing.farmer
         buyer = match.buyer
 
+        buyer_name = (
+            buyer.company_name
+            or (buyer.user.full_name if buyer.user else "A verified buyer")
+        )
+        buyer_phone = buyer.user.phone if buyer.user else ""
+
         message = (
-            "🚨 Buyer Interest Alert\n"
-            f"{buyer.company_name or 'A verified buyer'} "
-            f"is interested in your {listing.quantity_kg}kg "
-            f"of {listing.crop_type}.\n"
-            "Approve the match to continue."
+            "🚨 AgroMarket Buyer Alert!\n"
+            f"{buyer_name} is interested in your {listing.quantity_kg}kg "
+            f"of {listing.crop_type} in {listing.district}.\n"
+            f"Buyer Phone: {buyer_phone}\n"
+            "Log in to negotiate price, place, and accept the deal!"
         )
 
-        NotificationService._safe_sms(
+        sent = NotificationService._safe_sms(
             farmer.user.phone,
             message
         )
+        if sent:
+            match.is_notified_farmer = True
+            db.commit()
+
+    # =====================================================
+    # FARMER ACCEPTS MATCH
+    # =====================================================
+    @staticmethod
+    def notify_match_accepted(db: Session, match_id: int) -> None:
+        match = db.query(Match).filter(Match.id == match_id).first()
+        if not match:
+            return
+
+        listing = match.listing
+        farmer = listing.farmer
+        buyer = match.buyer
+
+        farmer_name = farmer.user.full_name if farmer.user else "The farmer"
+        farmer_phone = farmer.user.phone if farmer.user else ""
+
+        message = (
+            "🎉 Deal Approved!\n"
+            f"{farmer_name} accepted your interest in {listing.quantity_kg}kg "
+            f"of {listing.crop_type}.\n"
+            f"Farmer Contact: {farmer_phone}\n"
+            "You can now finalize the transaction on AgroMarket."
+        )
+
+        if buyer.user and buyer.user.phone:
+            NotificationService._safe_sms(buyer.user.phone, message)
+
+    # =====================================================
+    # NEW BARGAIN / CHAT MESSAGE ALERT
+    # =====================================================
+    @staticmethod
+    def notify_new_message(db: Session, match_id: int, sender_id: int, preview: str) -> None:
+        match = db.query(Match).filter(Match.id == match_id).first()
+        if not match:
+            return
+
+        farmer_user = match.listing.farmer.user
+        buyer_user = match.buyer.user
+
+        # Identify recipient
+        recipient = buyer_user if sender_id == farmer_user.id else farmer_user
+        sender = farmer_user if sender_id == farmer_user.id else buyer_user
+
+        if recipient and recipient.phone:
+            crop = match.listing.crop_type
+            message = (
+                f"💬 AgroMarket Negotiation Alert\n"
+                f"New message from {sender.full_name} regarding {crop}:\n"
+                f"\"{preview[:80]}\"\n"
+                "Log in to respond."
+            )
+            NotificationService._safe_sms(recipient.phone, message)
 
     # =====================================================
     # TRANSACTION STATUS UPDATE

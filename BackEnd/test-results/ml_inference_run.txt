@@ -1,0 +1,7 @@
+﻿..                                                                       [100%]
+============================== warnings summary ===============================
+app/tests/test_ml_inference.py::test_pricing_service_integration
+  P:\AI Farmer-Market Connection System\BackEnd\app\services\pricing_service.py:84: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    month = datetime.utcnow().month
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html

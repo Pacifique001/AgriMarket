@@ -17,7 +17,9 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, bind=engine)
+
 
 def override_get_db():
     try:
@@ -26,10 +28,12 @@ def override_get_db():
     finally:
         db.close()
 
+
 # Apply the database override to the FastAPI app
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
+
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_database():
@@ -39,6 +43,7 @@ def setup_database():
     Base.metadata.drop_all(bind=engine)
 
 # --- AUTHENTICATION TESTS ---
+
 
 def test_user_registration():
     """Test that a farmer can register successfully."""
@@ -56,13 +61,24 @@ def test_user_registration():
     assert data["phone"] == "0780000001"
     assert "id" in data
 
+
 def test_login_success():
     """Test that the registered user can log in and receive a JWT."""
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "phone": "0780000002",
+            "full_name": "Test Farmer",
+            "password": "securepassword123",
+            "role": "farmer"
+        }
+    )
+
     # Note: OAuth2PasswordRequestForm uses form-data, not JSON
     response = client.post(
         "/api/v1/auth/login",
         data={
-            "username": "0780000001",
+            "username": "0780000002",
             "password": "securepassword123"
         }
     )
@@ -70,17 +86,26 @@ def test_login_success():
     data = response.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
-    return data["access_token"]
 
 
 # --- LISTING & AI TESTS ---
 
 def test_create_listing_with_ai():
     """Test creating a listing and ensuring AI pricing is triggered."""
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "phone": "0780000003",
+            "full_name": "Test Farmer",
+            "password": "securepassword123",
+            "role": "farmer"
+        }
+    )
+
     # 1. Login to get token
     login_res = client.post(
         "/api/v1/auth/login",
-        data={"username": "0780000001", "password": "securepassword123"}
+        data={"username": "0780000003", "password": "securepassword123"}
     )
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -88,12 +113,14 @@ def test_create_listing_with_ai():
     # 2. Create Listing
     listing_data = {
         "crop_type": "Maize",
+        "crop_id": 1,
         "quantity_kg": 1000,
         "district": "Musanze",
         "asking_price": 300
     }
-    response = client.post("/api/v1/listings/", json=listing_data, headers=headers)
-    
+    response = client.post("/api/v1/listings/",
+                           json=listing_data, headers=headers)
+
     assert response.status_code == 201
     data = response.json()
     assert data["crop_type"] == "Maize"
@@ -101,58 +128,94 @@ def test_create_listing_with_ai():
     assert data["ai_suggested_price"] is not None
     assert data["ai_suggested_price"] > 0
 
+
 def test_get_public_listings():
     """Test that anyone can view the available listings."""
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "phone": "0780000004",
+            "full_name": "Test Farmer",
+            "password": "securepassword123",
+            "role": "farmer"
+        }
+    )
+
+    login_res = client.post(
+        "/api/v1/auth/login",
+        data={"username": "0780000004", "password": "securepassword123"}
+    )
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    client.post(
+        "/api/v1/listings/",
+        json={
+            "crop_type": "Maize",
+            "crop_id": 1,
+            "quantity_kg": 1000,
+            "district": "Musanze",
+            "asking_price": 300
+        },
+        headers=headers
+    )
+
     response = client.get("/api/v1/listings/")
     assert response.status_code == 200
     data = response.json()
     assert len(data) >= 1
-    assert data[0]["crop_type"] == "Maize"
+    assert any(item["crop_type"] == "Maize" for item in data)
 
 
 # --- AI ENDPOINT TESTS ---
 def test_public_market_prediction():
     """Test the public AI market prediction endpoint."""
     # Use dummy values (should not error, even if models are not present)
-    response = client.get("/api/v1/analytics/predict/market", params={"crop_id": 0, "region_id": 1, "month": 7})
+    response = client.get("/api/v1/analytics/predict/market",
+                          params={"crop_id": 0, "region_id": 1, "month": 7})
     assert response.status_code == 200
     data = response.json()
     assert "predicted_demand_kg" in data
     assert "estimated_price" in data
     assert "confidence" in data
 
+
 def test_admin_ai_market_insight():
     """Test the admin AI market insight endpoint (requires admin login)."""
-    # Register and login as admin (simulate by using farmer, since test DB is isolated)
+    # Register and login as a real admin user so the RBAC guard is exercised
     client.post(
         "/api/v1/auth/register",
         json={
-            "phone": "0780000003",
+            "phone": "0780000005",
             "full_name": "Test Admin",
             "password": "adminpassword",
-            "role": "farmer"  # Use farmer for admin in test context
+            "role": "admin"
         }
     )
     login_res = client.post(
         "/api/v1/auth/login",
-        data={"username": "0780000003", "password": "adminpassword"}
+        data={"username": "0780000005", "password": "adminpassword"}
     )
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
-    response = client.get("/api/v1/analytics/ai-market-insight", params={"crop_id": 0, "region_id": 1}, headers=headers)
+    response = client.get("/api/v1/analytics/ai-market-insight",
+                          params={"crop_id": 0, "region_id": 1}, headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert "estimated_price" in data
     assert "predicted_demand_kg" in data
     assert "confidence" in data
+
 
 def test_unauthorized_listing_creation():
     """Ensure a user cannot post a listing without a token."""
     response = client.post(
         "/api/v1/listings/",
-        json={"crop_type": "Beans", "quantity_kg": 50, "district": "Kigali", "asking_price": 500}
+        json={"crop_type": "Beans", "quantity_kg": 50,
+              "district": "Kigali", "asking_price": 500}
     )
-    assert response.status_code == 401 # Unauthorized
+    assert response.status_code == 401  # Unauthorized
+
 
 def test_buyer_role_restriction():
     """Ensure a Buyer cannot access Farmer-only stats."""
@@ -160,7 +223,7 @@ def test_buyer_role_restriction():
     client.post(
         "/api/v1/auth/register",
         json={
-            "phone": "0780000002",
+            "phone": "0780000006",
             "full_name": "Test Buyer",
             "password": "buyerpassword",
             "role": "buyer"
@@ -169,11 +232,11 @@ def test_buyer_role_restriction():
     # 2. Login as Buyer
     login_res = client.post(
         "/api/v1/auth/login",
-        data={"username": "0780000002", "password": "buyerpassword"}
+        data={"username": "0780000006", "password": "buyerpassword"}
     )
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     # 3. Attempt to access Farmer Stats
     response = client.get("/api/v1/farmers/stats", headers=headers)
-    assert response.status_code == 403 # Forbidden
+    assert response.status_code == 403  # Forbidden

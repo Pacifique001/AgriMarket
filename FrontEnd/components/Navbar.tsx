@@ -1,15 +1,15 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Bell, 
-  Search, 
-  UserCircle, 
-  Menu, 
-  BrainCircuit, 
-  HelpCircle 
+import {
+  Bell,
+  Search,
+  UserCircle,
+  Menu,
+  BrainCircuit,
+  HelpCircle
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { getNavbarSearchPlaceholder } from "@/lib/navbar";
 
 export function Navbar() {
   const { user } = useAuth();
@@ -20,9 +20,9 @@ export function Navbar() {
       <div className="hidden md:flex items-center flex-1 max-w-md">
         <div className="relative w-full group">
           <Search className="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-green-600 transition-colors" size={18} />
-          <input 
-            type="text" 
-            placeholder={user?.role === "buyer" ? "Search crops or districts..." : "Search transactions..."}
+          <input
+            type="text"
+            placeholder={getNavbarSearchPlaceholder(user?.role)}
             className="w-full bg-slate-100/50 border border-slate-200 py-2 pl-10 pr-4 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
           />
         </div>

@@ -1,0 +1,29 @@
+You are a senior QA engineer with expertise in Python/FastAPI backends,
+ML systems, and Next.js frontends. I am giving you access to my codebase.
+
+Your job is to produce a complete test analysis and implementation plan.
+
+CONTEXT
+- Backend: FastAPI [+ describe DB, auth method, key dependencies]
+- ML: [describe the model type, framework — sklearn/PyTorch/HF, inference path]
+- Frontend: Next.js [version, App Router or Pages Router, state library]
+- Deployment: [where it runs — Docker, cloud, on-prem]
+- Current test coverage: [percentage if known, "none" if not]
+
+DELIVERABLES (produce all of these)
+
+1. SYSTEM MAP
+2. FUNCTIONAL TEST PLAN
+3. NON-FUNCTIONAL TEST PLAN
+4. ML-SPECIFIC TESTS
+5. CONCRETE TEST CODE (pytest/httpx, pytest+hypothesis, Jest/RTL, Playwright)
+6. CI/CD INTEGRATION
+7. REPORT
+8. PRIORITIZATION
+
+CONSTRAINTS
+- No fake tests that just call code without asserting outcomes
+- Mock only external dependencies
+- Every test must have a clear failure message
+- Cite file paths when referencing code
+- Ask before assuming missing information

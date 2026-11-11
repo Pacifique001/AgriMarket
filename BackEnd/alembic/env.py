@@ -1,6 +1,7 @@
 from app.models.audit_log import AuditLog
 from app.models.buyer_request import BuyerRequest
 from app.models.match import Match
+from app.models.message import Message
 from app.models.transaction import Transaction
 from app.models.listing import Listing
 from app.models.buyer import Buyer
