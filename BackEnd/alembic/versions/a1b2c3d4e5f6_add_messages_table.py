@@ -1,7 +1,7 @@
 """Add messages table for bargaining and chat
 
 Revision ID: a1b2c3d4e5f6
-Revises: 5fa46e1b41eb
+Revises: 63203e6ee5e5
 Create Date: 2026-11-11 09:15:00.000000
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision: str = 'a1b2c3d4e5f6'
-down_revision: Union[str, Sequence[str], None] = '5fa46e1b41eb'
+down_revision: Union[str, Sequence[str], None] = '63203e6ee5e5'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
