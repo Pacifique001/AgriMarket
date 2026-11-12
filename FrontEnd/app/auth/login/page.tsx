@@ -33,6 +33,19 @@ export default function LoginPage() {
   const router = useRouter();
   const { setAuth, isAuthenticated, _hasHydrated, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isTimeout =
+        sessionStorage.getItem("session_expired") === "timeout" ||
+        window.location.search.includes("reason=timeout");
+      if (isTimeout) {
+        setSessionExpiredNotice(true);
+        sessionStorage.removeItem("session_expired");
+      }
+    }
+  }, []);
 
   // 2. Session Guard: Redirect if already logged in
   useEffect(() => {
@@ -99,6 +112,18 @@ export default function LoginPage() {
         <h2 className="text-2xl font-black tracking-tight text-slate-900">Welcome Back</h2>
         <p className="text-slate-500 text-xs font-medium">Log in to your marketplace account</p>
       </div>
+
+      {sessionExpiredNotice && (
+        <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5 animate-in fade-in">
+          <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="font-bold">Session Inactivity Timeout</p>
+            <p className="text-[11px] text-amber-700 leading-relaxed">
+              Your session expired after 5 minutes of tab inactivity to protect your account. Please sign in again.
+            </p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
         <div className="space-y-1">
