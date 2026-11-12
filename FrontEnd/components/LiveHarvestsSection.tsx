@@ -1,7 +1,5 @@
 "use client";
 
-import { getCropImageUrl } from "@/lib/crop-images";
-
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,36 +16,18 @@ import {
   X, 
   LogIn, 
   UserPlus, 
-  CheckCircle2,
-  Sparkles,
-  Phone
+  Sparkles
 } from "lucide-react";
 import { listingsService, Listing } from "@/services/listings";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/context/LanguageContext";
+import { getCropImageUrl } from "@/lib/crop-images";
 import { cn } from "@/lib/utils";
-
-const CROP_FALLBACK_IMAGES: Record<string, string> = {
-  maize: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=600&q=80",
-  potato: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=600&q=80",
-  beans: "https://images.unsplash.com/photo-1551462147-37885acc36f1?auto=format&fit=crop&w=600&q=80",
-  rice: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80",
-  "sweet potato": "https://rwandainspirer.com/wp-content/uploads/2018/05/potatoes-800x445.jpg",
-  cassava: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=600&q=80",
-  default: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=600&q=80"
-};
-
-function getCropImage(cropType: string, customUrl?: string | null): string {
-  if (customUrl && customUrl.startsWith("http")) return customUrl;
-  const key = cropType.toLowerCase().trim();
-  for (const [k, url] of Object.entries(CROP_FALLBACK_IMAGES)) {
-    if (key.includes(k)) return url;
-  }
-  return CROP_FALLBACK_IMAGES.default;
-}
 
 export function LiveHarvestsSection() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const [selectedCropFilter, setSelectedCropFilter] = useState<string>("All");
   const [activeModalListing, setActiveModalListing] = useState<Listing | null>(null);
 
@@ -65,7 +45,14 @@ export function LiveHarvestsSection() {
     return l.crop_type.toLowerCase().includes(selectedCropFilter.toLowerCase());
   });
 
-  const filterTabs = ["All", "Maize", "Beans", "Potato", "Rice"];
+  const filterTabs = [
+    { key: "All", label: t.liveHarvests.filterAll },
+    { key: "Maize", label: t.liveHarvests.filterMaize },
+    { key: "Beans", label: t.liveHarvests.filterBeans },
+    { key: "Potato", label: t.liveHarvests.filterPotato },
+    { key: "Rice", label: t.liveHarvests.filterRice },
+    { key: "Cassava", label: t.liveHarvests.filterCassava },
+  ];
 
   const handleHarvestClick = (listing: Listing) => {
     if (isAuthenticated && user?.role === "buyer") {
@@ -85,13 +72,14 @@ export function LiveHarvestsSection() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-bold uppercase tracking-wider">
               <Sparkles size={14} className="text-green-700" />
-              <span>Live Marketplace Feed</span>
+              <span>{t.liveHarvests.badge}</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Fresh Harvests <span className="text-green-700">Ready for Pickup</span>
+              {t.liveHarvests.titlePrefix}
+              <span className="text-green-700">{t.liveHarvests.titleHighlight}</span>
             </h2>
             <p className="text-slate-600 max-w-2xl text-sm md:text-base font-medium">
-              Directly published by verified Rwandan smallholders. Buyers can express immediate interest, negotiate via SMS, and coordinate delivery.
+              {t.liveHarvests.description}
             </p>
           </div>
 
@@ -99,16 +87,16 @@ export function LiveHarvestsSection() {
           <div className="flex flex-wrap gap-2">
             {filterTabs.map((tab) => (
               <button
-                key={tab}
-                onClick={() => setSelectedCropFilter(tab)}
+                key={tab.key}
+                onClick={() => setSelectedCropFilter(tab.key)}
                 className={cn(
                   "px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm",
-                  selectedCropFilter === tab
+                  selectedCropFilter === tab.key
                     ? "bg-green-700 text-white shadow-md shadow-green-700/20"
                     : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
                 )}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -118,19 +106,19 @@ export function LiveHarvestsSection() {
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center space-y-3">
             <Loader2 className="animate-spin text-green-700" size={36} />
-            <p className="text-sm text-slate-500 font-medium">Scanning verified harvests across Rwanda...</p>
+            <p className="text-sm text-slate-500 font-medium">{t.common.loading}</p>
           </div>
         ) : filteredListings.length === 0 ? (
           <div className="card p-12 text-center bg-white rounded-3xl border border-dashed border-slate-300 space-y-4">
             <div className="w-16 h-16 rounded-full bg-green-50 text-green-700 flex items-center justify-center mx-auto">
               <Sprout size={32} />
             </div>
-            <h3 className="font-bold text-lg text-slate-800">No {selectedCropFilter !== "All" ? selectedCropFilter : ""} Harvests Published Right Now</h3>
+            <h3 className="font-bold text-lg text-slate-800">{t.liveHarvests.emptyTitle}</h3>
             <p className="text-sm text-slate-500 max-w-md mx-auto">
-              Are you a farmer with produce ready to sell? Publish your harvest now to get instant alerts from waiting buyers.
+              {t.liveHarvests.emptyDesc}
             </p>
-            <Link href="/auth/register" className="btn-primary inline-flex items-center gap-2 px-6 py-3">
-              List Your Harvest <ArrowRight size={16} />
+            <Link href="/auth/register" className="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-2xl">
+              {t.liveHarvests.listHarvestCta} <ArrowRight size={16} />
             </Link>
           </div>
         ) : (
@@ -153,12 +141,12 @@ export function LiveHarvestsSection() {
                     />
                     <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-green-800 shadow-sm flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse"></span>
-                      Available
+                      {t.liveHarvests.availableBadge}
                     </div>
                     {listing.ai_suggested_price && (
                       <div className="absolute bottom-3 right-3 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-yellow-300 shadow-sm flex items-center gap-1">
                         <BrainCircuit size={12} />
-                        AI Verified Price
+                        {t.liveHarvests.aiVerifiedBadge}
                       </div>
                     )}
                   </div>
@@ -171,14 +159,14 @@ export function LiveHarvestsSection() {
                           {listing.crop_type}
                         </h3>
                         <span className="text-xs font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-lg">
-                          {listing.asking_price.toLocaleString()} RWF/kg
+                          {listing.asking_price.toLocaleString()} {t.common.rwfPerKg}
                         </span>
                       </div>
 
                       <div className="space-y-1.5 pt-2 text-xs text-slate-600 font-medium">
                         <div className="flex items-center gap-2">
                           <Scale size={14} className="text-slate-400" />
-                          <span>{listing.quantity_kg.toLocaleString()} kg total volume</span>
+                          <span>{listing.quantity_kg.toLocaleString()} {t.common.kg} {t.liveHarvests.totalVolume}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin size={14} className="text-slate-400" />
@@ -191,7 +179,7 @@ export function LiveHarvestsSection() {
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
                         <ShieldCheck size={14} className="text-green-600" />
-                        <span>Verified Farmer</span>
+                        <span>{t.liveHarvests.verifiedFarmer}</span>
                       </div>
                       <button
                         type="button"
@@ -202,7 +190,7 @@ export function LiveHarvestsSection() {
                         className="px-3 py-1.5 bg-green-700 hover:bg-green-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                       >
                         <ShoppingCart size={13} />
-                        <span>I&apos;m Interested</span>
+                        <span>{t.liveHarvests.interestedButton}</span>
                       </button>
                     </div>
                   </div>
@@ -219,7 +207,7 @@ export function LiveHarvestsSection() {
               href={isAuthenticated && user?.role === "buyer" ? "/dashboard/buyer/dashboard" : "/auth/login"}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white border border-slate-300 text-slate-700 font-bold text-sm hover:border-green-600 hover:text-green-700 transition shadow-sm"
             >
-              View All {listings.length} Harvests on Marketplace <ArrowRight size={16} />
+              {t.liveHarvests.viewAllHarvests} ({listings.length}) <ArrowRight size={16} />
             </Link>
           </div>
         )}
@@ -243,10 +231,10 @@ export function LiveHarvestsSection() {
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
-                  Buyer Handshake
+                  {t.liveHarvests.modalBadge}
                 </span>
                 <h3 className="text-xl font-extrabold text-slate-900 mt-1">
-                  Interested in {activeModalListing.crop_type}?
+                  {t.liveHarvests.modalTitlePrefix} {activeModalListing.crop_type}?
                 </h3>
               </div>
             </div>
@@ -254,24 +242,24 @@ export function LiveHarvestsSection() {
             {/* Harvest Summary Card */}
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                <span className="text-slate-500 font-bold">Crop:</span>
+                <span className="text-slate-500 font-bold">{t.liveHarvests.cropLabel}</span>
                 <span className="font-extrabold text-slate-900">{activeModalListing.crop_type}</span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                <span className="text-slate-500 font-bold">Available Quantity:</span>
-                <span className="font-extrabold text-slate-900">{activeModalListing.quantity_kg.toLocaleString()} kg</span>
+                <span className="text-slate-500 font-bold">{t.liveHarvests.quantityLabel}</span>
+                <span className="font-extrabold text-slate-900">{activeModalListing.quantity_kg.toLocaleString()} {t.common.kg}</span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                <span className="text-slate-500 font-bold">Asking Price:</span>
-                <span className="font-extrabold text-green-700">{activeModalListing.asking_price.toLocaleString()} RWF/kg</span>
+                <span className="text-slate-500 font-bold">{t.liveHarvests.priceLabel}</span>
+                <span className="font-extrabold text-green-700">{activeModalListing.asking_price.toLocaleString()} {t.common.rwfPerKg}</span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                <span className="text-slate-500 font-bold">Location:</span>
+                <span className="text-slate-500 font-bold">{t.liveHarvests.locationLabel}</span>
                 <span className="font-extrabold text-slate-900">{activeModalListing.district}{activeModalListing.sector ? `, ${activeModalListing.sector}` : ""}</span>
               </div>
               {activeModalListing.harvest_date && (
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500 font-bold">Harvest Date:</span>
+                  <span className="text-slate-500 font-bold">{t.liveHarvests.harvestDateLabel}</span>
                   <span className="font-extrabold text-emerald-700">
                     {new Date(activeModalListing.harvest_date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
                   </span>
@@ -280,7 +268,7 @@ export function LiveHarvestsSection() {
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              To express interest, propose a counter-offer, and receive immediate SMS phone alerts with the farmer, please sign in to your buyer account or register as a new buyer.
+              {t.liveHarvests.modalExplanation}
             </p>
 
             {/* Action Buttons */}
@@ -290,7 +278,7 @@ export function LiveHarvestsSection() {
                 className="w-full btn-primary py-3.5 flex items-center justify-center gap-2 rounded-2xl font-bold shadow-lg"
               >
                 <LogIn size={18} />
-                <span>Sign In to Buy</span>
+                <span>{t.liveHarvests.signInToBuy}</span>
               </Link>
 
               <Link
@@ -298,7 +286,7 @@ export function LiveHarvestsSection() {
                 className="w-full py-3.5 flex items-center justify-center gap-2 rounded-2xl font-bold border border-slate-300 text-slate-700 hover:bg-slate-50 transition"
               >
                 <UserPlus size={18} />
-                <span>Create New Buyer Account</span>
+                <span>{t.liveHarvests.createBuyerAccount}</span>
               </Link>
             </div>
           </div>

@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, FarmerProfile, BuyerProfile } from "@/hooks/useUser";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/context/LanguageContext";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { profileService } from "@/services/profile";
 import { 
-  User, 
-  MapPin, 
   Building2, 
   Sprout, 
   Save, 
@@ -15,10 +15,8 @@ import {
   Camera, 
   ShieldCheck, 
   Phone, 
-  Sparkles,
-  CheckCircle2,
-  AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  Globe
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { RWANDA_DISTRICTS } from "@/lib/constants";
@@ -27,6 +25,7 @@ export default function DashboardSettingsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { profile, isFarmer, isBuyer, isLoading, refreshProfile } = useUser();
+  const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
 
   // Profile photo state (saved locally in browser storage)
@@ -114,7 +113,7 @@ export default function DashboardSettingsPage() {
       localStorage.removeItem(`user_avatar_${user.sub}`);
       window.dispatchEvent(new Event("avatar-updated"));
     }
-    toast.success("Profile photo removed");
+    toast.success(t.settings.removePhoto);
   };
 
   const handleBackToDashboard = () => {
@@ -150,7 +149,7 @@ export default function DashboardSettingsPage() {
         });
       }
       await refreshProfile();
-      toast.success("Profile settings saved successfully!");
+      toast.success(t.settings.saveSuccess);
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Failed to save profile settings");
     } finally {
@@ -166,7 +165,7 @@ export default function DashboardSettingsPage() {
     );
   }
 
-  const roleName = user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "User";
+  const roleName = user?.role === "farmer" ? t.common.farmer : user?.role === "buyer" ? t.common.buyer : t.common.admin;
   const fullName = profile?.full_name || "AgroMarket Member";
 
   return (
@@ -178,23 +177,37 @@ export default function DashboardSettingsPage() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-sm transition-all group active:scale-95"
         >
           <ArrowLeft size={16} className="text-slate-500 group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Dashboard</span>
+          <span>{t.settings.backToDashboard}</span>
         </button>
 
         <div className="text-xs font-semibold text-slate-400">
-          <span>AgroMarket</span> / <span className="text-green-700 font-bold">Settings</span>
+          <span>AgroMarket</span> / <span className="text-green-700 font-bold">{t.common.settings}</span>
         </div>
       </div>
 
       {/* TITLE */}
       <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Account & Settings</h1>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t.settings.title}</h1>
         <p className="text-sm font-medium text-slate-500 mt-1">
-          Manage your personal identity, contact profile, and marketplace matching preferences.
+          {t.settings.subtitle}
         </p>
       </div>
 
-      {/* PROFILE PHOTO & IDENTITY CARD */}
+      {/* 1. LANGUAGE SELECTION SECTION */}
+      <div className="card p-6 md:p-8 bg-white border border-slate-200 rounded-3xl space-y-4 shadow-sm">
+        <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+          <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl">
+            <Globe size={22} />
+          </div>
+          <div>
+            <h3 className="font-bold text-lg text-slate-900">{t.settings.languageSection}</h3>
+            <p className="text-xs text-slate-500">{t.settings.languageDesc}</p>
+          </div>
+        </div>
+        <LanguageSwitcher variant="cards" />
+      </div>
+
+      {/* 2. PROFILE PHOTO & IDENTITY CARD */}
       <div className="card p-6 bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col md:flex-row items-center gap-6">
         <div className="relative group">
           <div className="w-28 h-28 rounded-3xl overflow-hidden bg-gradient-to-tr from-green-700 to-emerald-500 flex items-center justify-center text-white text-3xl font-black shadow-md border-2 border-white">
@@ -234,7 +247,7 @@ export default function DashboardSettingsPage() {
             </span>
             <span className="flex items-center gap-1">
               <ShieldCheck size={14} className="text-green-600" />
-              Verified AgroMarket Account
+              {t.settings.verifiedBadge}
             </span>
           </div>
 
@@ -243,13 +256,13 @@ export default function DashboardSettingsPage() {
               onClick={handleRemovePhoto}
               className="text-xs text-red-600 hover:underline font-bold mt-2 inline-block"
             >
-              Remove custom photo
+              {t.settings.removePhoto}
             </button>
           )}
         </div>
       </div>
 
-      {/* FORM SECTION */}
+      {/* 3. FORM SECTION */}
       <form onSubmit={handleSaveProfile} className="space-y-6">
         {/* FARMER SETTINGS */}
         {isFarmer && (
@@ -259,15 +272,15 @@ export default function DashboardSettingsPage() {
                 <Sprout size={22} />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-slate-900">Farm & Production Settings</h3>
-                <p className="text-xs text-slate-500">Logistics and produce details used for AI matching.</p>
+                <h3 className="font-bold text-lg text-slate-900">{t.settings.farmProduction}</h3>
+                <p className="text-xs text-slate-500">{t.settings.farmProductionDesc}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Primary District *
+                  {t.settings.primaryDistrict}
                 </label>
                 <select
                   value={farmerForm.district}
@@ -275,7 +288,7 @@ export default function DashboardSettingsPage() {
                   className="input-field"
                   required
                 >
-                  <option value="">Select District</option>
+                  <option value="">{t.farmerListings.selectDistrict}</option>
                   {RWANDA_DISTRICTS.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
@@ -284,7 +297,7 @@ export default function DashboardSettingsPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Sector / Location
+                  {t.settings.sector}
                 </label>
                 <input
                   type="text"
@@ -297,7 +310,7 @@ export default function DashboardSettingsPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Village
+                  {t.settings.village}
                 </label>
                 <input
                   type="text"
@@ -310,7 +323,7 @@ export default function DashboardSettingsPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Farm Size (Hectares)
+                  {t.settings.farmSize}
                 </label>
                 <input
                   type="number"
@@ -324,7 +337,7 @@ export default function DashboardSettingsPage() {
 
               <div className="md:col-span-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Main Harvest Crops (Comma separated)
+                  {t.settings.mainCrops}
                 </label>
                 <input
                   type="text"
@@ -346,15 +359,15 @@ export default function DashboardSettingsPage() {
                 <Building2 size={22} />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-slate-900">Procurement & Buyer Settings</h3>
-                <p className="text-xs text-slate-500">Configure your business details and purchase volumes.</p>
+                <h3 className="font-bold text-lg text-slate-900">{t.settings.procurement}</h3>
+                <p className="text-xs text-slate-500">{t.settings.procurementDesc}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Company / Trading Name
+                  {t.settings.companyName}
                 </label>
                 <input
                   type="text"
@@ -367,7 +380,7 @@ export default function DashboardSettingsPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Buyer Type
+                  {t.settings.buyerType}
                 </label>
                 <select
                   value={buyerForm.buyer_type}
@@ -385,7 +398,7 @@ export default function DashboardSettingsPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Base District *
+                  {t.settings.baseDistrict}
                 </label>
                 <select
                   value={buyerForm.base_district}
@@ -393,7 +406,7 @@ export default function DashboardSettingsPage() {
                   className="input-field"
                   required
                 >
-                  <option value="">Select District</option>
+                  <option value="">{t.farmerListings.selectDistrict}</option>
                   {RWANDA_DISTRICTS.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
@@ -402,7 +415,7 @@ export default function DashboardSettingsPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Preferred Sourcing Districts (Comma separated)
+                  {t.settings.preferredDistricts}
                 </label>
                 <input
                   type="text"
@@ -415,7 +428,7 @@ export default function DashboardSettingsPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Min Purchase Quantity (kg)
+                  {t.settings.minPurchaseQty}
                 </label>
                 <input
                   type="number"
@@ -428,7 +441,7 @@ export default function DashboardSettingsPage() {
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1">
-                  Max Purchase Quantity (kg)
+                  {t.settings.maxPurchaseQty}
                 </label>
                 <input
                   type="number"
@@ -448,7 +461,7 @@ export default function DashboardSettingsPage() {
           className="btn-primary w-full py-3.5 flex items-center justify-center gap-2 rounded-2xl shadow-lg text-sm font-bold active:scale-95 transition"
         >
           {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-          Save Settings & Update Matching
+          {t.settings.saveChanges}
         </button>
       </form>
     </div>

@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
 import { SessionTimeoutHandler } from "@/components/SessionTimeoutHandler";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 export function Providers({ children }: { children: ReactNode }) {
   // We use useState to ensure QueryClient is only created once per session
@@ -20,8 +21,10 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionTimeoutHandler />
-      {children}
+      <LanguageProvider>
+        <SessionTimeoutHandler />
+        {children}
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

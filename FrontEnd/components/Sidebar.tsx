@@ -10,35 +10,44 @@ import {
   ClipboardList, 
   Settings, 
   LogOut,
-  ShieldCheck,
-  ChevronRight
+  ShieldCheck, 
+  ChevronRight,
+  Globe
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
-
-// Define Navigation links for each role
-const MENU_MAP = {
-  farmer: [
-    { label: "Dashboard", href: "/dashboard/farmer/dashboard", icon: LayoutDashboard },
-    { label: "My Listings", href: "/dashboard/farmer/listings", icon: Sprout },
-    { label: "Performance", href: "/dashboard/farmer/analytics", icon: BarChart3 },
-  ],
-  buyer: [
-    { label: "Marketplace", href: "/dashboard/buyer/dashboard", icon: ShoppingBag },
-    { label: "Procurement", href: "/dashboard/buyer/requests", icon: ClipboardList },
-  ],
-  admin: [
-    { label: "System Health", href: "/dashboard/admin/dashboard", icon: ShieldCheck },
-  ],
-};
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { t, language, setLanguage } = useLanguage();
   
-  // Default to empty if role not found, though layout guard prevents this
-  const role = user?.role as keyof typeof MENU_MAP;
-  const menuItems = MENU_MAP[role] || [];
+  const role = user?.role as "farmer" | "buyer" | "admin" | undefined;
+
+  const getMenuItems = () => {
+    if (role === "farmer") {
+      return [
+        { label: t.nav.dashboard, href: "/dashboard/farmer/dashboard", icon: LayoutDashboard },
+        { label: t.nav.myListings, href: "/dashboard/farmer/listings", icon: Sprout },
+        { label: t.nav.performance, href: "/dashboard/farmer/analytics", icon: BarChart3 },
+      ];
+    }
+    if (role === "buyer") {
+      return [
+        { label: t.nav.marketplace, href: "/dashboard/buyer/dashboard", icon: ShoppingBag },
+        { label: t.nav.procurement, href: "/dashboard/buyer/requests", icon: ClipboardList },
+      ];
+    }
+    if (role === "admin") {
+      return [
+        { label: t.nav.systemHealth, href: "/dashboard/admin/dashboard", icon: ShieldCheck },
+      ];
+    }
+    return [];
+  };
+
+  const menuItems = getMenuItems();
 
   return (
     <div className="flex flex-col h-full bg-green-950 text-white border-r border-green-900 shadow-2xl">
@@ -48,14 +57,19 @@ export function Sidebar() {
           <div className="p-2 bg-yellow-400 rounded-xl text-green-950">
             <Sprout size={24} />
           </div>
-          <span className="text-xl font-black tracking-tighter">AGROMARKET</span>
+          <div>
+            <span className="text-xl font-black tracking-tighter">AGROMARKET</span>
+            <span className="text-[9px] font-bold text-green-400 uppercase tracking-widest block -mt-1">
+              Rwanda
+            </span>
+          </div>
         </Link>
       </div>
 
       {/* 2. Navigation Section */}
       <nav className="flex-1 px-4 py-4 space-y-2">
         <p className="text-[10px] font-black text-green-500 uppercase tracking-widest px-3 mb-4">
-          {role} Menu
+          {role === "farmer" ? t.common.farmer : role === "buyer" ? t.common.buyer : t.common.admin} Menu
         </p>
         
         {menuItems.map((item) => {
@@ -81,14 +95,29 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* 3. Bottom Actions Section */}
+      {/* 3. Bottom Actions Section with Language Switcher */}
       <div className="p-4 border-t border-green-900 space-y-2">
+        {/* Quick Language Toggle */}
+        <button
+          onClick={() => setLanguage(language === "rw" ? "en" : "rw")}
+          className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold text-green-300 hover:text-white bg-green-900/40 hover:bg-green-900/80 rounded-xl transition-colors"
+          title={t.common.switchLanguage}
+        >
+          <div className="flex items-center gap-2">
+            <Globe size={16} className="text-green-400" />
+            <span>{language === "rw" ? "🇷🇼 Ikinyarwanda" : "🇬🇧 English"}</span>
+          </div>
+          <span className="text-[10px] bg-green-800 text-green-200 px-2 py-0.5 rounded-full font-semibold">
+            {language === "rw" ? "Kuri EN" : "Ku RW"}
+          </span>
+        </button>
+
         <Link 
           href="/dashboard/settings" 
           className="flex items-center gap-3 px-3 py-3 text-sm font-bold text-green-400 hover:text-white rounded-xl transition-colors"
         >
           <Settings size={20} />
-          <span>Settings</span>
+          <span>{t.common.settings}</span>
         </Link>
         
         <button 
@@ -96,7 +125,7 @@ export function Sidebar() {
           className="w-full flex items-center gap-3 px-3 py-3 text-sm font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-all active:scale-95"
         >
           <LogOut size={20} />
-          <span>Sign Out</span>
+          <span>{t.common.logout}</span>
         </button>
       </div>
     </div>

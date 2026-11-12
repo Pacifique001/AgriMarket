@@ -15,11 +15,10 @@ import {
   AlertCircle,
   PackageSearch,
   Upload,
-  Camera,
   Image as ImageIcon,
   CheckCircle2,
   Calendar,
-  MapPin,
+  Camera,
   Sparkles,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -27,6 +26,7 @@ import toast from "react-hot-toast";
 import { listingsService } from "@/services/listings";
 import { useUser, FarmerProfile } from "@/hooks/useUser";
 import { useMarketAI } from "@/hooks/useMarketAI";
+import { useLanguage } from "@/context/LanguageContext";
 import { CropCard } from "@/components/CropCard";
 import { RWANDA_DISTRICTS, CROP_OPTIONS } from "@/lib/constants";
 import { getCropImageUrl } from "@/lib/crop-images";
@@ -50,6 +50,7 @@ export default function MyHarvestsPage() {
   const queryClient = useQueryClient();
   const { profile, isFarmer, isLoading: userLoading } = useUser();
   const { usePriceSuggestion } = useMarketAI();
+  const { t } = useLanguage();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -116,14 +117,12 @@ export default function MyHarvestsPage() {
 
     setIsUploadingImage(true);
     try {
-      // Immediate local preview
       const localPreviewUrl = URL.createObjectURL(file);
       setImagePreview(localPreviewUrl);
 
-      // Server upload
       const serverUrl = await listingsService.uploadImage(file);
       setValue("image_url", serverUrl, { shouldValidate: true });
-      toast.success("Harvest photo uploaded successfully!");
+      toast.success(t.farmerListings.photoAttached);
     } catch (err: any) {
       console.error(err);
       toast.error(err?.response?.data?.detail || "Upload failed. You can use verified crop photo.");
@@ -135,13 +134,13 @@ export default function MyHarvestsPage() {
   /* Use verified authentic preset crop photo */
   const handleUsePresetPhoto = () => {
     if (!watchedCrop) {
-      toast.error("Please select a crop first");
+      toast.error(t.farmerListings.selectCrop);
       return;
     }
     const preset = getCropImageUrl(watchedCrop);
     setValue("image_url", preset, { shouldValidate: true });
     setImagePreview(preset);
-    toast.success(`Attached verified ${watchedCrop} harvest photo`);
+    toast.success(`${t.farmerListings.photoAttached}: ${watchedCrop}`);
   };
 
   /* Mutations */
@@ -150,7 +149,7 @@ export default function MyHarvestsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-listings"] });
       queryClient.invalidateQueries({ queryKey: ["homepage-public-listings"] });
-      toast.success("Harvest published to marketplace!");
+      toast.success(t.farmerListings.successPublished);
       reset();
       setImagePreview("");
       setIsModalOpen(false);
@@ -193,11 +192,11 @@ export default function MyHarvestsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900">My Harvests</h1>
-          <p className="text-slate-500 text-sm">
-            Publish your crops with photos, pickup location, and AI price optimization
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{t.farmerListings.title}</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            {t.farmerListings.subtitle}
           </p>
         </div>
         <button
@@ -205,9 +204,9 @@ export default function MyHarvestsPage() {
             setIsModalOpen(true);
             setImagePreview("");
           }}
-          className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl shadow-md"
+          className="btn-primary flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl shadow-md whitespace-nowrap active:scale-95 transition"
         >
-          <Plus size={18} /> List Harvest
+          <Plus size={18} /> {t.farmerListings.listHarvestButton}
         </button>
       </div>
 
@@ -216,7 +215,7 @@ export default function MyHarvestsPage() {
         <Search size={18} className="text-slate-400 ml-1" />
         <input
           className="flex-1 outline-none text-sm text-slate-800 placeholder:text-slate-400"
-          placeholder="Search your published crops..."
+          placeholder={t.farmerListings.searchPlaceholder}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -226,20 +225,20 @@ export default function MyHarvestsPage() {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 space-y-3">
           <Loader2 className="animate-spin text-green-600" size={42} />
-          <p className="text-sm text-slate-500 font-medium">Loading your listings...</p>
+          <p className="text-sm text-slate-500 font-medium">{t.common.loading}</p>
         </div>
       ) : filteredListings.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200 space-y-3 p-8">
           <PackageSearch size={56} className="mx-auto text-slate-300" />
-          <h3 className="text-lg font-bold text-slate-800">No Harvests Listed Yet</h3>
+          <h3 className="text-lg font-bold text-slate-800">{t.farmerListings.emptyListingsTitle}</h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto">
-            Ready to sell your produce? Upload a photo and publish your harvest with location and expected harvest date to connect with verified buyers.
+            {t.farmerListings.emptyListingsDesc}
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="btn-primary inline-flex items-center gap-2 px-6 py-2.5 rounded-xl mt-2"
+            className="btn-primary inline-flex items-center gap-2 px-6 py-2.5 rounded-xl mt-2 shadow-md active:scale-95 transition"
           >
-            <Plus size={16} /> Publish First Harvest
+            <Plus size={16} /> {t.farmerListings.publishFirst}
           </button>
         </div>
       ) : (
@@ -264,13 +263,13 @@ export default function MyHarvestsPage() {
 
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
-                  Verified Farmer Listing
+                  AgroMarket Rwanda
                 </span>
                 <h2 className="text-2xl font-black text-slate-900 mt-2 flex items-center gap-2">
-                  <BrainCircuit className="text-green-600" /> Publish Harvest
+                  <BrainCircuit className="text-green-600" /> {t.farmerListings.modalTitle}
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Upload a photo of your harvest, specify location, and set availability.
+                  {t.farmerListings.modalSubtitle}
                 </p>
               </div>
 
@@ -281,7 +280,7 @@ export default function MyHarvestsPage() {
               >
                 {/* 1. Crop Selection */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">Crop Type *</label>
+                  <label className="text-xs font-bold text-slate-700">{t.farmerListings.cropTypeLabel}</label>
                   <select
                     {...register("crop_type")}
                     className={cn(
@@ -296,7 +295,7 @@ export default function MyHarvestsPage() {
                       }
                     }}
                   >
-                    <option value="">Select Crop</option>
+                    <option value="">{t.farmerListings.selectCrop}</option>
                     {CROP_OPTIONS.map((c) => (
                       <option key={c.id} value={c.name}>
                         {c.name}
@@ -311,7 +310,7 @@ export default function MyHarvestsPage() {
                 {/* 2. Location (District & Sector / Farm) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">District (Where it is) *</label>
+                    <label className="text-xs font-bold text-slate-700">{t.farmerListings.districtLabel}</label>
                     <select
                       {...register("district")}
                       className={cn(
@@ -319,7 +318,7 @@ export default function MyHarvestsPage() {
                         errors.district && "border-red-500"
                       )}
                     >
-                      <option value="">Select District</option>
+                      <option value="">{t.farmerListings.selectDistrict}</option>
                       {RWANDA_DISTRICTS.map((d) => (
                         <option key={d} value={d}>
                           {d}
@@ -332,11 +331,11 @@ export default function MyHarvestsPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Sector / Farm Location *</label>
+                    <label className="text-xs font-bold text-slate-700">{t.farmerListings.sectorLabel}</label>
                     <input
                       type="text"
                       {...register("sector")}
-                      placeholder="e.g., Kinigi, Kagogo Farm"
+                      placeholder={t.farmerListings.sectorPlaceholder}
                       className={cn(
                         "input-field text-sm",
                         errors.sector && "border-red-500"
@@ -352,7 +351,7 @@ export default function MyHarvestsPage() {
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                     <Calendar size={14} className="text-green-600" />
-                    <span>Harvest / Market Availability Date *</span>
+                    <span>{t.farmerListings.harvestDateLabel}</span>
                   </label>
                   <input
                     type="date"
@@ -366,18 +365,18 @@ export default function MyHarvestsPage() {
                     <p className="text-[11px] text-red-500 font-medium">{errors.harvest_date.message}</p>
                   )}
                   <p className="text-[10px] text-slate-400">
-                    Expected date when the crop is ready for buyer inspection and transport.
+                    {t.farmerListings.harvestDateHelper}
                   </p>
                 </div>
 
                 {/* 4. Quantity & Asking Price */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Quantity (kg) *</label>
+                    <label className="text-xs font-bold text-slate-700">{t.farmerListings.quantityLabel}</label>
                     <input
                       type="number"
                       {...register("quantity_kg", { valueAsNumber: true })}
-                      placeholder="e.g., 500"
+                      placeholder={t.farmerListings.quantityPlaceholder}
                       className={cn(
                         "input-field text-sm",
                         errors.quantity_kg && "border-red-500"
@@ -389,11 +388,11 @@ export default function MyHarvestsPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Asking Price (RWF/kg) *</label>
+                    <label className="text-xs font-bold text-slate-700">{t.farmerListings.askingPriceLabel}</label>
                     <input
                       type="number"
                       {...register("asking_price", { valueAsNumber: true })}
-                      placeholder="e.g., 350"
+                      placeholder={t.farmerListings.askingPricePlaceholder}
                       className={cn(
                         "input-field text-sm",
                         errors.asking_price && "border-red-500"
@@ -416,7 +415,7 @@ export default function MyHarvestsPage() {
                     <Loader2 className="animate-spin" size={16} />
                   ) : (
                     <>
-                      <Sparkles size={14} /> Get AI Market Price Suggestion
+                      <Sparkles size={14} /> {t.farmerListings.aiButton}
                     </>
                   )}
                 </button>
@@ -426,7 +425,7 @@ export default function MyHarvestsPage() {
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                       <Camera size={14} className="text-green-700" />
-                      <span>Upload Harvest Photo *</span>
+                      <span>{t.farmerListings.uploadPhotoLabel}</span>
                     </label>
                     <span className="text-[10px] text-slate-400 font-semibold">JPG, PNG, WebP</span>
                   </div>
@@ -450,7 +449,7 @@ export default function MyHarvestsPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 text-green-700 text-xs font-bold">
-                          <CheckCircle2 size={14} /> Photo Attached
+                          <CheckCircle2 size={14} /> {t.farmerListings.photoAttached}
                         </div>
                         <p className="text-[11px] text-slate-500 truncate">
                           {watchedCrop ? `${watchedCrop} harvest` : "Produce photo"}
@@ -462,7 +461,7 @@ export default function MyHarvestsPage() {
                           onClick={() => fileInputRef.current?.click()}
                           className="px-2.5 py-1 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100"
                         >
-                          Change
+                          {t.farmerListings.changePhoto}
                         </button>
                         <button
                           type="button"
@@ -488,7 +487,7 @@ export default function MyHarvestsPage() {
                         {isUploadingImage ? (
                           <div className="flex items-center gap-2 text-green-700 text-xs font-bold py-2">
                             <Loader2 className="animate-spin" size={18} />
-                            Uploading harvest photo...
+                            {t.farmerListings.uploadingPhoto}
                           </div>
                         ) : (
                           <>
@@ -497,10 +496,10 @@ export default function MyHarvestsPage() {
                             </div>
                             <div>
                               <p className="text-xs font-bold text-slate-800">
-                                Click to Upload Harvest Photo from Device
+                                {t.farmerListings.uploadPrompt}
                               </p>
                               <p className="text-[10px] text-slate-400">
-                                Real crop pictures increase buyer handshake rate by 3x
+                                {t.farmerListings.uploadTip}
                               </p>
                             </div>
                           </>
@@ -514,7 +513,7 @@ export default function MyHarvestsPage() {
                         className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
                       >
                         <ImageIcon size={14} className="text-green-700" />
-                        <span>Use Verified Authentic {watchedCrop || "Crop"} Photo</span>
+                        <span>{t.farmerListings.useVerifiedPreset} {watchedCrop || "Crop"}</span>
                       </button>
                     </div>
                   )}
@@ -531,18 +530,18 @@ export default function MyHarvestsPage() {
                     onClick={() => setIsModalOpen(false)}
                     className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition"
                   >
-                    Cancel
+                    {t.common.cancel}
                   </button>
                   <button
                     type="submit"
                     disabled={createMutation.isPending || isUploadingImage}
-                    className="flex-1 btn-primary py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2"
+                    className="flex-1 btn-primary py-3 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition"
                   >
                     {createMutation.isPending ? (
                       <Loader2 className="animate-spin" size={18} />
                     ) : (
                       <>
-                        Publish Harvest <ArrowRight size={16} />
+                        {t.farmerListings.publishButton} <ArrowRight size={16} />
                       </>
                     )}
                   </button>

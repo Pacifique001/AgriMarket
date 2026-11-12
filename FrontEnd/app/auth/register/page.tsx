@@ -15,13 +15,13 @@ import {
   ArrowRight,
   Loader2,
   AlertCircle,
-  Sparkles,
 } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 import { authService } from "@/services/auth";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 
 // 1. Define Validation Schema
@@ -35,14 +35,15 @@ const registerSchema = z.object({
 type RegisterValues = z.infer<typeof registerSchema>;
 
 const ROLE_REDIRECTS = {
-  farmer: "/farmer/dashboard",
-  buyer: "/buyer/dashboard",
-  admin: "/admin/dashboard",
+  farmer: "/dashboard/farmer/dashboard",
+  buyer: "/dashboard/buyer/dashboard",
+  admin: "/dashboard/admin/dashboard",
 } as const;
 
 function RegisterForm() {
   const router = useRouter();
   const { isAuthenticated, _hasHydrated, user } = useAuth();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
 
   // 2. Session Guard: Redirect if already logged in
@@ -83,7 +84,7 @@ function RegisterForm() {
     setIsLoading(true);
     try {
       await authService.register(data);
-      toast.success("Account created successfully! Please log in.");
+      toast.success(t.common.verified);
       router.push("/auth/login");
     } catch (error: unknown) {
       const errorMsg =
@@ -108,8 +109,8 @@ function RegisterForm() {
   return (
     <div className="space-y-3.5 animate-in fade-in duration-300">
       <div className="text-center space-y-0.5">
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Create Account</h2>
-        <p className="text-slate-500 text-xs font-medium">Join the Rwandan agricultural marketplace</p>
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t.auth.registerTitle}</h2>
+        <p className="text-slate-500 text-xs font-medium">{t.auth.registerSubtitle}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
@@ -126,7 +127,7 @@ function RegisterForm() {
             )}
           >
             <Sprout size={18} />
-            <span className="text-[11px] font-black uppercase tracking-wider">Farmer</span>
+            <span className="text-[11px] font-black uppercase tracking-wider">{t.auth.farmerRole}</span>
           </button>
 
           <button
@@ -140,19 +141,19 @@ function RegisterForm() {
             )}
           >
             <ShoppingCart size={18} />
-            <span className="text-[11px] font-black uppercase tracking-wider">Buyer</span>
+            <span className="text-[11px] font-black uppercase tracking-wider">{t.auth.buyerRole}</span>
           </button>
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-700">Full Name</label>
+          <label className="text-xs font-semibold text-slate-700">{t.auth.fullNameLabel}</label>
           <div className="relative">
             <User className="absolute left-3 top-2.5 text-slate-400" size={16} />
             <input
               {...register("full_name")}
               type="text"
               autoComplete="name"
-              placeholder="e.g., Jean Paul"
+              placeholder={t.auth.fullNamePlaceholder}
               className={cn(
                 "input-field h-10 pl-9 text-sm",
                 errors.full_name && "border-red-500 focus:ring-red-500"
@@ -167,14 +168,14 @@ function RegisterForm() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-700">Phone Number</label>
+          <label className="text-xs font-semibold text-slate-700">{t.auth.phoneLabel}</label>
           <div className="relative">
             <Phone className="absolute left-3 top-2.5 text-slate-400" size={16} />
             <input
               {...register("phone")}
               type="tel"
               autoComplete="tel"
-              placeholder="078..."
+              placeholder={t.auth.phonePlaceholder}
               className={cn(
                 "input-field h-10 pl-9 text-sm",
                 errors.phone && "border-red-500 focus:ring-red-500"
@@ -189,7 +190,7 @@ function RegisterForm() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-700">Password</label>
+          <label className="text-xs font-semibold text-slate-700">{t.auth.passwordLabel}</label>
           <div className="relative">
             <Lock className="absolute left-3 top-2.5 text-slate-400" size={16} />
             <input
@@ -219,7 +220,7 @@ function RegisterForm() {
             <Loader2 className="animate-spin" size={18} />
           ) : (
             <>
-              Create Account <ArrowRight size={16} />
+              {t.auth.registerCta} <ArrowRight size={16} />
             </>
           )}
         </button>
@@ -227,9 +228,9 @@ function RegisterForm() {
 
       <div className="text-center pt-1">
         <p className="text-xs text-slate-600 font-medium">
-          Already have an account?{" "}
+          {t.auth.alreadyHaveAccount}{" "}
           <Link href="/auth/login" className="text-green-700 font-bold hover:underline">
-            Sign in
+            {t.auth.signInLink}
           </Link>
         </p>
       </div>

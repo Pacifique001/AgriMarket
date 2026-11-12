@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Sprout, ArrowLeft } from "lucide-react";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function AuthLayout({
   children,
@@ -37,12 +38,15 @@ export default function AuthLayout({
           </span>
         </Link>
 
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-100/90 hover:text-white bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-full border border-white/15 backdrop-blur-md transition-all"
-        >
-          <ArrowLeft size={14} /> Back to Home
-        </Link>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher variant="header" />
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-100/90 hover:text-white bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-full border border-white/15 backdrop-blur-md transition-all"
+          >
+            <ArrowLeft size={14} /> Back to Home
+          </Link>
+        </div>
       </header>
 
       {/* Centered Compact Card (No Scroll) */}

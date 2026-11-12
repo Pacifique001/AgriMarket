@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Phone, Lock, LogIn, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
+import { Phone, Lock, LogIn, Loader2, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 import axios from "axios";
 import { authService } from "@/services/auth";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/context/LanguageContext";
 import { cn } from "@/lib/utils";
 
 // 1. Validation Schema
@@ -32,6 +33,7 @@ const ROLE_REDIRECTS = {
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth, isAuthenticated, _hasHydrated, user } = useAuth();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
 
@@ -68,19 +70,15 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginValues) => {
     setIsLoading(true);
     try {
-      // FastAPI OAuth2 expects FormData
       const formData = new FormData();
       formData.append("username", data.phone);
       formData.append("password", data.password);
 
       const response = await authService.login(formData);
 
-      // Update global state (this also saves to LocalStorage via Zustand Middleware)
       setAuth(response.access_token);
+      toast.success(t.auth.loginTitle);
 
-      toast.success("Welcome back!");
-
-      // Role-Based Redirection logic using the mapping
       const role = response.role.toLowerCase() as keyof typeof ROLE_REDIRECTS;
       const destination = ROLE_REDIRECTS[role] || "/";
       router.push(destination);
@@ -101,25 +99,25 @@ export default function LoginPage() {
     return (
       <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white/85">
         <Loader2 className="animate-spin text-green-700" size={32} />
-        <p className="text-slate-500 text-sm mt-4 font-medium">Verifying session...</p>
+        <p className="text-slate-500 text-sm mt-4 font-medium">{t.common.loading}</p>
       </div>
     );
   }
 
-   return (
+  return (
     <div className="space-y-4 animate-in fade-in duration-300">
       <div className="text-center space-y-1">
-        <h2 className="text-2xl font-black tracking-tight text-slate-900">Welcome Back</h2>
-        <p className="text-slate-500 text-xs font-medium">Log in to your marketplace account</p>
+        <h2 className="text-2xl font-black tracking-tight text-slate-900">{t.auth.loginTitle}</h2>
+        <p className="text-slate-500 text-xs font-medium">{t.auth.loginSubtitle}</p>
       </div>
 
       {sessionExpiredNotice && (
         <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2.5 animate-in fade-in">
           <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
-            <p className="font-bold">Session Inactivity Timeout</p>
+            <p className="font-bold">{t.auth.timeoutNoticeTitle}</p>
             <p className="text-[11px] text-amber-700 leading-relaxed">
-              Your session expired after 5 minutes of tab inactivity to protect your account. Please sign in again.
+              {t.auth.timeoutNoticeDesc}
             </p>
           </div>
         </div>
@@ -127,14 +125,14 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-700">Phone Number</label>
+          <label className="text-xs font-semibold text-slate-700">{t.auth.phoneLabel}</label>
           <div className="relative">
             <Phone className="absolute left-3 top-2.5 text-slate-400" size={16} />
             <input
               {...register("phone")}
               type="tel"
               autoComplete="tel"
-              placeholder="078..."
+              placeholder={t.auth.phonePlaceholder}
               className={cn(
                 "input-field h-10 pl-9 text-sm",
                 errors.phone && "border-red-500 focus:ring-red-500"
@@ -150,9 +148,9 @@ export default function LoginPage() {
 
         <div className="space-y-1">
           <div className="flex justify-between items-center">
-            <label className="text-xs font-semibold text-slate-700">Password</label>
+            <label className="text-xs font-semibold text-slate-700">{t.auth.passwordLabel}</label>
             <Link href="/auth/forgot-password" className="text-xs text-green-700 font-bold hover:underline">
-              Forgot?
+              {t.auth.forgotPassword}
             </Link>
           </div>
           <div className="relative">
@@ -184,7 +182,7 @@ export default function LoginPage() {
             <Loader2 className="animate-spin" size={18} />
           ) : (
             <>
-              Sign In <LogIn size={16} />
+              {t.auth.loginCta} <LogIn size={16} />
             </>
           )}
         </button>
@@ -195,7 +193,7 @@ export default function LoginPage() {
           <span className="w-full border-t border-slate-200"></span>
         </div>
         <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
-          <span className="bg-white px-3 text-slate-400 font-bold">New to AgroMarket?</span>
+          <span className="bg-white px-3 text-slate-400 font-bold">{t.auth.dontHaveAccount}</span>
         </div>
       </div>
 
@@ -204,7 +202,7 @@ export default function LoginPage() {
           href="/auth/register"
           className="inline-block w-full border border-slate-200 text-slate-700 text-xs font-bold py-2.5 rounded-lg hover:bg-slate-50 transition-all"
         >
-          Create an Account
+          {t.auth.registerCta}
         </Link>
       </div>
     </div>

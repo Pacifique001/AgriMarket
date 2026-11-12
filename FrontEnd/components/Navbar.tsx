@@ -1,5 +1,8 @@
 "use client";
 
+import { useLanguage } from "@/context/LanguageContext";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUser } from "@/hooks/useUser";
@@ -31,6 +34,7 @@ export function Navbar() {
   const router = useRouter();
   const { user } = useAuth();
   const { profile, isFarmer, isBuyer } = useUser();
+  const { t } = useLanguage();
 
   // Avatar state from local storage
   const [photoUrl, setPhotoUrl] = useState<string>("");
@@ -197,8 +201,11 @@ export function Navbar() {
           className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
         >
           <BrainCircuit size={16} />
-          <span className="text-[10px] font-black uppercase tracking-tighter">AI Assistant</span>
+          <span className="text-[10px] font-black uppercase tracking-tighter">{t.nav.aiAssistant}</span>
         </Link>
+
+        {/* Language Switcher */}
+        <LanguageSwitcher variant="header" />
 
         {/* Help & Support Guide Button */}
         <button
@@ -232,7 +239,7 @@ export function Navbar() {
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <Bell size={18} className="text-green-700" />
-                  <h4 className="font-bold text-slate-900 text-sm">Notifications</h4>
+                  <h4 className="font-bold text-slate-900 text-sm">{t.common.notifications}</h4>
                   <span className={cn(
                     "text-[10px] px-2 py-0.5 rounded-full font-bold",
                     unreadCount > 0 ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"
@@ -248,7 +255,7 @@ export function Navbar() {
                       title="Mark all notifications as read"
                     >
                       <CheckCheck size={14} />
-                      <span>Mark read</span>
+                      <span>{t.nav.markAllRead}</span>
                     </button>
                   )}
                   <button
@@ -264,7 +271,7 @@ export function Navbar() {
                 {notifications.length === 0 ? (
                   <div className="text-center py-6 text-slate-400 space-y-1">
                     <CheckCircle2 size={28} className="mx-auto text-slate-300" />
-                    <p className="text-xs font-medium">All caught up! No unread alerts.</p>
+                    <p className="text-xs font-medium">{t.nav.allCaughtUp}</p>
                   </div>
                 ) : (
                   notifications.map((notif) => {
