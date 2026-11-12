@@ -6,6 +6,7 @@ import {
   ArrowRight,
   BarChart3
 } from "lucide-react";
+import { LiveHarvestsSection } from "@/components/LiveHarvestsSection";
 
 export default function HomePage() {
   return (
@@ -137,6 +138,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* --- Live Farmer Harvests Feed --- */}
+      <LiveHarvestsSection />
 
       {/* --- Footer Statistics --- */}
       <section className="py-12 bg-green-900 text-green-50 mt-auto">

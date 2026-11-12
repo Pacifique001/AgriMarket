@@ -19,13 +19,19 @@ api.interceptors.request.use((config) => {
 });
 
 // Handle global errors (e.g., 401 Unauthorized)
+// Skip the redirect for public pages (homepage) to avoid kicking out
+// unauthenticated visitors browsing public listings.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        window.location.href = '/auth/login';
+        const isPublicPage = window.location.pathname === '/';
+        // Only clear token and redirect if we're on a protected page
+        if (!isPublicPage) {
+          localStorage.removeItem('token');
+          window.location.href = '/auth/login';
+        }
       }
     }
     return Promise.reject(error);

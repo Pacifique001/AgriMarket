@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -40,7 +40,7 @@ const ROLE_REDIRECTS = {
   admin: "/admin/dashboard",
 } as const;
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const { isAuthenticated, _hasHydrated, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +68,15 @@ export default function RegisterPage() {
   });
 
   const selectedRole = watch("role");
+
+  // Pre-select role from URL query param (e.g., /auth/register?role=buyer)
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const roleParam = searchParams.get("role");
+    if (roleParam === "buyer" || roleParam === "farmer") {
+      setValue("role", roleParam);
+    }
+  }, [searchParams, setValue]);
 
   // 4. Form Submission Handler
   const onSubmit = async (data: RegisterValues) => {
@@ -225,5 +234,13 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }
