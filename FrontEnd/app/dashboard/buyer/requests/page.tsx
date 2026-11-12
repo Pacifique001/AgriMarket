@@ -27,6 +27,7 @@ import { useUser, BuyerProfile } from "@/hooks/useUser";
 import { BargainModal } from "@/components/BargainModal";
 import { cn } from "@/lib/utils";
 import api from "@/services/api";
+import { RWANDA_DISTRICTS, CROP_OPTIONS } from "@/lib/constants";
 
 // 1. Validation Schema for Buyer Demand
 const requestSchema = z.object({
@@ -206,7 +207,14 @@ export default function BuyerRequestsPage() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Sourcing District</label>
-                  <input {...register("preferred_district")} placeholder="e.g., Kayonza" className="input-field" />
+                  <select {...register("preferred_district")} className="input-field">
+                    <option value="">Select District</option>
+                    {RWANDA_DISTRICTS.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
                   {errors.preferred_district && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.preferred_district.message}</p>}
                 </div>
               </div>

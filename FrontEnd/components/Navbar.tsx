@@ -21,16 +21,32 @@ import {
   MessageSquare
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { SYSTEM_SUPPORT_INFO } from "@/lib/constants";
 import { getNavbarSearchPlaceholder } from "@/lib/navbar";
 
 export function Navbar() {
+  const router = useRouter();
   const { user } = useAuth();
   const { profile, isFarmer, isBuyer } = useUser();
 
   // Avatar state from local storage
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const notificationRef = useRef<HTMLDivElement>(null);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    const q = encodeURIComponent(searchQuery.trim());
+    if (isFarmer) {
+      router.push(`/dashboard/farmer/listings?search=${q}`);
+    } else {
+      router.push(`/dashboard/buyer/dashboard?search=${q}`);
+    }
+  };
 
   // Sync avatar from localStorage and listen to updates
   useEffect(() => {
@@ -123,16 +139,18 @@ export function Navbar() {
   return (
     <div className="h-16 flex items-center justify-between px-4 md:px-8 relative">
       {/* 1. Left: Search Bar (Hidden on Mobile) */}
-      <div className="hidden md:flex items-center flex-1 max-w-md">
+      <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center flex-1 max-w-md">
         <div className="relative w-full group">
           <Search className="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-green-600 transition-colors" size={18} />
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={getNavbarSearchPlaceholder(user?.role)}
             className="w-full bg-slate-100/50 border border-slate-200 py-2 pl-10 pr-4 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
           />
         </div>
-      </div>
+      </form>
 
       {/* Mobile Menu Icon (Visible on small screens) */}
       <button className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
@@ -150,6 +168,24 @@ export function Navbar() {
           <span className="text-[10px] font-black uppercase tracking-tighter">AI Assistant</span>
         </Link>
 
+        {/* Help & Support Guide Button */}
+        <button
+          onClick={() => setShowHelp(true)}
+          className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
+          title="SMS & Platform Guide"
+        >
+          <HelpCircle size={20} />
+        </button>
+
+        {/* Help & Support Guide Button */}
+        <button
+          onClick={() => setShowHelp(true)}
+          className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
+          title="SMS & Platform Guide"
+        >
+          <HelpCircle size={20} />
+        </button>
+
         {/* Notifications Bell with Interactive Dropdown */}
         <div className="relative" ref={notificationRef}>
           <button
@@ -264,6 +300,66 @@ export function Navbar() {
           </div>
         </Link>
       </div>
+
+      {/* --- Help & Prototype Guide Modal --- */}
+      {showHelp && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowHelp(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1 rounded-full"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-100 text-green-700 rounded-2xl">
+                <Sparkles size={24} />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-xl text-slate-900">AgriMarket Guide & Support</h3>
+                <p className="text-xs text-slate-500">How to use the prototype effectively</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-slate-900">
+                  <MessageSquare size={16} className="text-green-600" />
+                  <span>SMS & Bargaining Flow</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed">
+                  When a buyer clicks <strong>Bargain / Express Interest</strong> on a harvest, both the farmer and buyer receive immediate SMS alerts. They can negotiate counter-offers (price, quantity, delivery location) in real time.
+                </p>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-slate-900">
+                  <BrainCircuit size={16} className="text-blue-600" />
+                  <span>AI Pricing & Match Engine</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed">
+                  The AI continuously compares harvest listings against historical commodity prices and buyer procurement demand to generate confidence scores and suggest optimal pricing.
+                </p>
+              </div>
+
+              <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 space-y-1 text-slate-700">
+                <p className="font-bold text-emerald-900">Need Immediate Assistance?</p>
+                <p>Hotline: <strong className="text-slate-900">{SYSTEM_SUPPORT_INFO.hotline}</strong></p>
+                <p>USSD / SMS: <strong className="text-slate-900">{SYSTEM_SUPPORT_INFO.smsChannel}</strong></p>
+                <p>Support Hours: <span className="text-slate-600">{SYSTEM_SUPPORT_INFO.hours}</span></p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowHelp(false)}
+              className="w-full btn-primary py-3 rounded-2xl font-bold"
+            >
+              Got it, let's trade!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

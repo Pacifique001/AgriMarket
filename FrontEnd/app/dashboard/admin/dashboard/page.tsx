@@ -32,6 +32,7 @@ import { useUser } from "@/hooks/useUser";
 import { useAuditLogs } from "@/hooks/useAuditLogs";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import AdminAuditLogs from "../AdminAuditLogs";
 
 const COLORS = ['#15803d', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'];
 
@@ -63,8 +64,49 @@ export default function AdminDashboard() {
   });
 
   const handleDownloadReport = () => {
-    toast.success("Generating latest market report...");
-    // In production, this would trigger a CSV/PDF generation endpoint
+    try {
+      const rows: string[] = [];
+      rows.push("AgriMarket Rwanda - Platform Performance & Inventory Report");
+      rows.push(`Exported at: ${new Date().toISOString()}`);
+      rows.push("");
+      rows.push("--- KEY PLATFORM METRICS ---");
+      rows.push("Metric,Value");
+      rows.push(`Platform GMV (RWF),${overview?.market_performance?.gmv_rwf || 0}`);
+      rows.push(`Trade Volume (KG),${overview?.market_performance?.volume_kg || 0}`);
+      rows.push(`Total Users,${overview?.user_base?.total || 0}`);
+      rows.push(`Registered Farmers,${overview?.user_base?.farmers || 0}`);
+      rows.push(`Active Harvest Listings,${overview?.current_inventory?.active_listings || 0}`);
+      rows.push("");
+      rows.push("--- REGIONAL SUPPLY INTENSITY ---");
+      rows.push("District,Available Stock (KG),Market Vibrancy Score (%)");
+      if (Array.isArray(regions)) {
+        regions.forEach((r: any) => {
+          rows.push(`"${r.district || ""}",${r.available_stock_kg || 0},${Math.min(r.market_vibrancy_score * 10, 100)}%`);
+        });
+      }
+      rows.push("");
+      rows.push("--- AI MARKET DEFICIT GAPS ---");
+      rows.push("Crop,Unsatisfied Buyer Matches");
+      if (Array.isArray(marketGaps)) {
+        marketGaps.forEach((g: any) => {
+          rows.push(`"${g.crop || ""}",${g.unsatisfied_buyer_interest || 0}`);
+        });
+      }
+
+      const csvContent = rows.join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `agrimarket_report_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Market report exported to CSV successfully!");
+    } catch (e) {
+      toast.error("Failed to export report.");
+    }
   };
 
   // Guard: Unauthorized access
@@ -118,7 +160,7 @@ export default function AdminDashboard() {
         <AdminStatCard 
           title="Platform GMV" 
           value={`${(overview?.market_performance?.gmv_rwf || 0).toLocaleString()} RWF`} 
-          change="+14.5%"
+          change="Live Trades"
           isUp={true}
           icon={<TrendingUp className="text-green-600" />} 
           description="Total trade value"
@@ -134,8 +176,8 @@ export default function AdminDashboard() {
         <AdminStatCard 
           title="Trade Volume" 
           value={`${(overview?.market_performance?.volume_kg || 0).toLocaleString()} KG`} 
-          change="-2.1%"
-          isUp={false}
+          change="Aggregated Flow"
+          isUp={true}
           icon={<Package className="text-amber-600" />} 
           description="Total weight moved"
         />
@@ -266,6 +308,9 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* --- Live Audit Trail --- */}
+      <AdminAuditLogs />
     </div>
   );
 }

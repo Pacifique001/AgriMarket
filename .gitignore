@@ -2,3 +2,17 @@
 BackEnd/app/ai/datasets/raw/AHS2024_Section3_4_CROP.dta
 .env
 .env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.pytest_cache/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/

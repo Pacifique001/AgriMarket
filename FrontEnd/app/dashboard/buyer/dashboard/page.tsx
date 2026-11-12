@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
@@ -23,6 +23,7 @@ import { useUser, BuyerProfile } from "@/hooks/useUser";
 import { CropCard } from "@/components/CropCard";
 import { BargainModal } from "@/components/BargainModal";
 import { cn } from "@/lib/utils";
+import { RWANDA_DISTRICTS } from "@/lib/constants";
 
 export default function BuyerDashboard() {
   const queryClient = useQueryClient();
@@ -33,6 +34,16 @@ export default function BuyerDashboard() {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("search");
+      if (q) setSearchTerm(q);
+      const d = params.get("district");
+      if (d) setDistrictFilter(d);
+    }
+  }, []);
 
   // Active negotiation modal state
   const [activeChatMatch, setActiveChatMatch] = useState<{
@@ -157,12 +168,11 @@ export default function BuyerDashboard() {
             onChange={(e) => setDistrictFilter(e.target.value)}
           >
             <option value="">All Districts</option>
-            <option value="Musanze">Musanze</option>
-            <option value="Kigali">Kigali</option>
-            <option value="Kayonza">Kayonza</option>
-            <option value="Nyabihu">Nyabihu</option>
-            <option value="Huye">Huye</option>
-            <option value="Rubavu">Rubavu</option>
+            {RWANDA_DISTRICTS.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
           </select>
         </div>
       </div>

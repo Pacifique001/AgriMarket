@@ -19,14 +19,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import toast from "react-hot-toast";
-
-const RWANDA_DISTRICTS = [
-  "Gasabo", "Kicukiro", "Nyarugenge", // Kigali
-  "Bugesera", "Gatsibo", "Kayonza", "Kirehe", "Ngoma", "Nyagatare", "Rwamagana", // Eastern
-  "Burera", "Gakenke", "Gicumbi", "Musanze", "Rulindo", // Northern
-  "Gisagara", "Huye", "Kamonyi", "Muhanga", "Nyamagabe", "Nyanza", "Nyaruguru", "Ruhango", // Southern
-  "Karongi", "Ngororero", "Nyabihu", "Nyamasheke", "Rubavu", "Rusizi", "Rutsiro" // Western
-];
+import { RWANDA_DISTRICTS } from "@/lib/constants";
 
 export default function SettingsPage() {
   const { user } = useAuth();

@@ -21,20 +21,10 @@ import { listingsService } from "@/services/listings";
 import { useUser, FarmerProfile } from "@/hooks/useUser";
 import { useMarketAI } from "@/hooks/useMarketAI";
 import { CropCard } from "@/components/CropCard";
+import { RWANDA_DISTRICTS, CROP_OPTIONS } from "@/lib/constants";
 
-/* ------------------ */
-/* Crop Options       */
-/* ------------------ */
-const CROP_OPTIONS = [
-  { id: 1, name: "Maize" },
-  { id: 2, name: "Beans" },
-  { id: 3, name: "Potato" },
-  { id: 4, name: "Rice" },
-];
 
-/* ------------------ */
 /* Validation Schema  */
-/* ------------------ */
 const listingSchema = z.object({
   crop_type: z.string().min(2),
   crop_id: z.number().min(1),
@@ -57,20 +47,24 @@ export default function MyHarvestsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("search");
+      if (q) setSearchTerm(q);
+    }
+  }, []);
+
   const farmerProfile = isFarmer ? (profile as FarmerProfile) : null;
 
-  /* ------------------ */
   /* Queries            */
-  /* ------------------ */
   const { data: listings, isLoading } = useQuery({
     queryKey: ["my-listings"],
     queryFn: listingsService.getMyListings,
     enabled: isFarmer,
   });
 
-  /* ------------------ */
   /* Form               */
-  /* ------------------ */
   const {
     register,
     handleSubmit,
@@ -95,9 +89,7 @@ export default function MyHarvestsPage() {
   const watchedCrop = watch("crop_type");
   const watchedDistrict = watch("district");
 
-  /* ------------------ */
   /* Mutations          */
-  /* ------------------ */
   const createMutation = useMutation({
     mutationFn: listingsService.createListing,
     onSuccess: () => {
@@ -111,9 +103,7 @@ export default function MyHarvestsPage() {
     },
   });
 
-  /* ------------------ */
   /* AI Pricing         */
-  /* ------------------ */
   const { data: priceSuggestion, isLoading: isAnalyzing } =
     usePriceSuggestion(watchedCrop, watchedDistrict);
 
@@ -129,9 +119,7 @@ export default function MyHarvestsPage() {
       l.crop_type.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
-  /* ------------------ */
   /* Guards             */
-  /* ------------------ */
   if (!userLoading && !isFarmer) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center text-center">
@@ -144,9 +132,7 @@ export default function MyHarvestsPage() {
     );
   }
 
-  /* ------------------ */
   /* UI                 */
-  /* ------------------ */
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -231,11 +217,17 @@ export default function MyHarvestsPage() {
                     ))}
                   </select>
 
-                  <input
+                  <select
                     {...register("district")}
-                    placeholder="District"
                     className="input-field"
-                  />
+                  >
+                    <option value="">Select District</option>
+                    {RWANDA_DISTRICTS.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Quantity & Price */}

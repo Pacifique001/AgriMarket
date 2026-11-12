@@ -14,6 +14,7 @@ import {
 import api from "@/services/api";
 import { useUser, FarmerProfile } from "@/hooks/useUser";
 import { cn } from "@/lib/utils";
+import { CROP_OPTIONS, SYSTEM_SUPPORT_INFO } from "@/lib/constants";
 
 export default function FarmerAnalytics() {
   const { profile, isFarmer } = useUser();
@@ -86,10 +87,11 @@ export default function FarmerAnalytics() {
             onChange={(e) => setSelectedCrop(e.target.value)}
             className="bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 outline-none pr-8"
           >
-            <option value="Maize">Maize</option>
-            <option value="Beans">Beans</option>
-            <option value="Potato">Potato</option>
-            <option value="Soya">Soya</option>
+            {CROP_OPTIONS.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -255,9 +257,12 @@ export default function FarmerAnalytics() {
               <p className="text-sm text-slate-600 font-medium italic">Ensure moisture content is below 13% for Maize to attract premium buyers.</p>
             </div>
           </div>
-          <button className="mt-6 w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all">
-            Contact Support
-          </button>
+          <a
+            href={`tel:${SYSTEM_SUPPORT_INFO.hotline.replace(/\s+/g, '')}`}
+            className="mt-6 w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all text-center block"
+          >
+            Call Support ({SYSTEM_SUPPORT_INFO.hotline})
+          </a>
         </div>
       </div>
     </div>
