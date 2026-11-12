@@ -64,6 +64,20 @@ export const listingsService = {
   },
 
   /**
+   * Upload a harvest photo from device
+   */
+  async uploadImage(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/listings/upload-image", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return res.data.url;
+  },
+
+  /**
    * Create a new listing (Farmer)
    * Triggers AI pricing on backend
    */

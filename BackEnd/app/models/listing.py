@@ -36,7 +36,7 @@ class Listing(Base):
     ai_market_message = Column(String(500), nullable=True)  # ✅ ADD THIS
 
     # Image
-    image_url = Column(String(255), nullable=True)
+    image_url = Column(String, nullable=True)
 
     # Location
     district = Column(String(100), nullable=False, index=True)

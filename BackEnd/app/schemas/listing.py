@@ -22,15 +22,21 @@ class ListingBase(BaseModel):
     @field_validator("image_url", mode="before")
     @classmethod
     def validate_image_url(cls, v):
-        # Allow None or empty string
         if not v or (isinstance(v, str) and v.strip() == ""):
             return None
-        
-        # If provided, check extension
+        v_str = str(v).strip()
+        if (
+            v_str.startswith("http://")
+            or v_str.startswith("https://")
+            or v_str.startswith("/static/")
+            or v_str.startswith("data:image/")
+        ):
+            return v_str
         allowed_ext = (".jpg", ".jpeg", ".png", ".webp", ".gif")
-        if not any(str(v).lower().endswith(ext) for ext in allowed_ext):
-            raise ValueError("Image URL must end with .jpg, .jpeg, .png, .webp, or .gif")
-        return v
+        cleaned_path = v_str.lower().split("?")[0].split("#")[0]
+        if any(cleaned_path.endswith(ext) for ext in allowed_ext):
+            return v_str
+        raise ValueError("Image URL must be a valid link or uploaded file (.jpg, .jpeg, .png, .webp, .gif)")
 
 # ------------------------------------------------------------------
 # INPUT SCHEMAS (Farmer side)
@@ -52,6 +58,8 @@ class ListingUpdate(BaseModel):
     asking_price: Optional[float] = Field(None, gt=0)
     status: Optional[ListingStatus] = None
     harvest_date: Optional[datetime] = None
+    sector: Optional[str] = None
+    image_url: Optional[str] = None
 
 # ------------------------------------------------------------------
 # OUTPUT SCHEMAS (Data going to Frontend)

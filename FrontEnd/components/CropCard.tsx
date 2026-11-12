@@ -1,5 +1,7 @@
 "use client";
 
+import { getCropImageUrl } from "@/lib/crop-images";
+
 import Link from "next/link";
 import {
   Sprout,
@@ -32,6 +34,8 @@ interface CropCardProps {
   role: "farmer" | "buyer";
   created_at?: string;
   image_url?: string | null;
+  sector?: string | null;
+  harvest_date?: string | null;
   // Buyer interest props
   onInterest?: () => void;
   onChat?: () => void;
@@ -52,6 +56,8 @@ export function CropCard({
   role,
   created_at,
   image_url,
+  sector,
+  harvest_date,
   onInterest,
   onChat,
   isPending,
@@ -68,19 +74,20 @@ export function CropCard({
   return (
     <div className="card group flex flex-col h-full bg-white rounded-2xl border border-slate-200 hover:border-green-300 transition-all">
       {/* Image */}
-      {image_url && (
-        <div className="h-40 w-full overflow-hidden rounded-t-2xl bg-slate-100 border-b">
-          <img
-            src={image_url}
-            alt={`${crop_type} image`}
-            className="h-full w-full object-cover"
-            loading="lazy"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
-        </div>
-      )}
+      <div className="h-40 w-full overflow-hidden rounded-t-2xl bg-slate-100 border-b relative">
+        <img
+          src={getCropImageUrl(crop_type, image_url)}
+          alt={`${crop_type} harvest`}
+          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+        />
+        {harvest_date && (
+          <span className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-md text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            <Clock size={10} />
+            <span>Ready: {new Date(harvest_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+          </span>
+        )}
+      </div>
 
       {/* Status & AI Match */}
       <div className="p-4 pb-0 flex justify-between items-start">
@@ -133,8 +140,8 @@ export function CropCard({
           </div>
 
           <div className="flex items-center gap-2 text-sm text-slate-600">
-            <MapPin size={14} />
-            <span className="font-medium">{district}</span>
+            <MapPin size={14} className="shrink-0 text-slate-400" />
+            <span className="font-medium truncate">{district}{sector ? `, ${sector}` : ""}</span>
           </div>
 
           {created_at && (

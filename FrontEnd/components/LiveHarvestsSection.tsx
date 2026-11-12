@@ -1,5 +1,7 @@
 "use client";
 
+import { getCropImageUrl } from "@/lib/crop-images";
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -134,7 +136,7 @@ export function LiveHarvestsSection() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredListings.slice(0, 8).map((listing) => {
-              const imageUrl = getCropImage(listing.crop_type, listing.image_url);
+              const imageUrl = getCropImageUrl(listing.crop_type, listing.image_url);
               return (
                 <div
                   key={listing.id}
@@ -263,10 +265,18 @@ export function LiveHarvestsSection() {
                 <span className="text-slate-500 font-bold">Asking Price:</span>
                 <span className="font-extrabold text-green-700">{activeModalListing.asking_price.toLocaleString()} RWF/kg</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
                 <span className="text-slate-500 font-bold">Location:</span>
-                <span className="font-extrabold text-slate-900">{activeModalListing.district}</span>
+                <span className="font-extrabold text-slate-900">{activeModalListing.district}{activeModalListing.sector ? `, ${activeModalListing.sector}` : ""}</span>
               </div>
+              {activeModalListing.harvest_date && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-bold">Harvest Date:</span>
+                  <span className="font-extrabold text-emerald-700">
+                    {new Date(activeModalListing.harvest_date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                  </span>
+                </div>
+              )}
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed font-medium">

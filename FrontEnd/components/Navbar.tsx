@@ -13,6 +13,7 @@ import {
   BrainCircuit,
   HelpCircle,
   CheckCircle2,
+  CheckCheck,
   AlertTriangle,
   Clock,
   Sparkles,
@@ -24,6 +25,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SYSTEM_SUPPORT_INFO } from "@/lib/constants";
 import { getNavbarSearchPlaceholder } from "@/lib/navbar";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const router = useRouter();
@@ -35,7 +37,37 @@ export function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [readIds, setReadIds] = useState<string[]>([]);
   const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Sync read notifications from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(`agrimarket_read_notifications_${user?.sub || "default"}`);
+        if (stored) setReadIds(JSON.parse(stored));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [user?.sub]);
+
+  const markAllAsRead = () => {
+    const allIds = notifications.map((n) => n.id);
+    const updated = Array.from(new Set([...readIds, ...allIds]));
+    setReadIds(updated);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`agrimarket_read_notifications_${user?.sub || "default"}`, JSON.stringify(updated));
+    }
+  };
+
+  const markOneAsRead = (id: string) => {
+    const updated = Array.from(new Set([...readIds, id]));
+    setReadIds(updated);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`agrimarket_read_notifications_${user?.sub || "default"}`, JSON.stringify(updated));
+    }
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +166,7 @@ export function Navbar() {
     });
   }
 
-  const unreadCount = notifications.length;
+  const unreadCount = notifications.filter((n) => !readIds.includes(n.id)).length;
 
   return (
     <div className="h-16 flex items-center justify-between px-4 md:px-8 relative">
@@ -177,22 +209,6 @@ export function Navbar() {
           <HelpCircle size={20} />
         </button>
 
-        {/* Help & Support Guide Button */}
-
-        <button
-
-          onClick={() => setShowHelp(true)}
-
-          className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
-
-          title="SMS & Platform Guide"
-
-        >
-
-          <HelpCircle size={20} />
-
-        </button>
-
 
 
         {/* Notifications Bell with Interactive Dropdown */}
@@ -217,16 +233,31 @@ export function Navbar() {
                 <div className="flex items-center gap-2">
                   <Bell size={18} className="text-green-700" />
                   <h4 className="font-bold text-slate-900 text-sm">Notifications</h4>
-                  <span className="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">
-                    {unreadCount} New
+                  <span className={cn(
+                    "text-[10px] px-2 py-0.5 rounded-full font-bold",
+                    unreadCount > 0 ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"
+                  )}>
+                    {unreadCount > 0 ? `${unreadCount} New` : "All read"}
                   </span>
                 </div>
-                <button
-                  onClick={() => setShowNotifications(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
-                >
-                  <X size={16} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-[11px] font-bold text-green-700 hover:text-green-800 hover:underline flex items-center gap-1"
+                      title="Mark all notifications as read"
+                    >
+                      <CheckCheck size={14} />
+                      <span>Mark read</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowNotifications(false)}
+                    className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
               </div>
 
               <div className="py-2 space-y-2 max-h-80 overflow-y-auto">
@@ -236,37 +267,56 @@ export function Navbar() {
                     <p className="text-xs font-medium">All caught up! No unread alerts.</p>
                   </div>
                 ) : (
-                  notifications.map((notif) => (
-                    <Link
-                      key={notif.id}
-                      href={notif.href}
-                      onClick={() => setShowNotifications(false)}
-                      className="block p-3 rounded-2xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100 group"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-xl bg-green-50 text-green-700 mt-0.5 group-hover:scale-105 transition-transform">
-                          {notif.type === "accepted" ? (
-                            <CheckCircle2 size={16} className="text-emerald-600" />
-                          ) : notif.type === "match" ? (
-                            <Sparkles size={16} className="text-amber-500" />
-                          ) : (
-                            <BrainCircuit size={16} className="text-blue-600" />
-                          )}
+                  notifications.map((notif) => {
+                    const isUnread = !readIds.includes(notif.id);
+                    return (
+                      <Link
+                        key={notif.id}
+                        href={notif.href}
+                        onClick={() => {
+                          markOneAsRead(notif.id);
+                          setShowNotifications(false);
+                        }}
+                        className={cn(
+                          "block p-3 rounded-2xl transition border group relative",
+                          isUnread
+                            ? "bg-green-50/50 hover:bg-green-50 border-green-200"
+                            : "hover:bg-slate-50 border-transparent hover:border-slate-100 opacity-80"
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={cn(
+                            "p-2 rounded-xl mt-0.5 group-hover:scale-105 transition-transform",
+                            isUnread ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"
+                          )}>
+                            {notif.type === "accepted" ? (
+                              <CheckCircle2 size={16} className="text-emerald-600" />
+                            ) : notif.type === "match" ? (
+                              <Sparkles size={16} className="text-amber-500" />
+                            ) : (
+                              <BrainCircuit size={16} className="text-blue-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 space-y-0.5">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-bold text-slate-900 leading-snug group-hover:text-green-700 transition-colors">
+                                {notif.title}
+                              </p>
+                              {isUnread && (
+                                <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse shrink-0 ml-1" title="Unread alert" />
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                              {notif.description}
+                            </p>
+                            <span className="text-[10px] text-slate-400 font-semibold block pt-1">
+                              {notif.time}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex-1 space-y-0.5">
-                          <p className="text-xs font-bold text-slate-900 leading-snug group-hover:text-green-700 transition-colors">
-                            {notif.title}
-                          </p>
-                          <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                            {notif.description}
-                          </p>
-                          <span className="text-[10px] text-slate-400 font-semibold block pt-1">
-                            {notif.time}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))
+                      </Link>
+                    );
+                  })
                 )}
               </div>
 

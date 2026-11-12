@@ -1,5 +1,7 @@
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -17,6 +19,43 @@ router = APIRouter( tags=["Listings"])
 # ------------------------------------------------------------------
 # CREATE LISTING (AI-AUGMENTED)
 # ------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+# UPLOAD HARVEST PHOTO
+# ------------------------------------------------------------------
+@router.post("/upload-image")
+async def upload_listing_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(check_farmer_role)
+):
+    """
+    Upload a harvest photo from device.
+    Saves image to static/uploads/ and returns the relative URL.
+    """
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only JPG, JPEG, PNG, WebP, and GIF images are allowed"
+        )
+
+    filename = f"{uuid.uuid4().hex}{ext}"
+    upload_dir = os.path.join("static", "uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = os.path.join(upload_dir, filename)
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds maximum allowed limit (10MB)"
+        )
+
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    return {"url": f"/static/uploads/{filename}"}
+
 @router.post("/", response_model=ListingRead, status_code=status.HTTP_201_CREATED)
 def create_listing(
     listing_in: ListingCreate,

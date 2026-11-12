@@ -1,3 +1,5 @@
+import os
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from slowapi.middleware import SlowAPIMiddleware
@@ -109,3 +111,7 @@ app.include_router(
     api_router,
     prefix=settings.API_V1_STR
 )
+
+# Ensure static uploads directory exists and mount static files
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
