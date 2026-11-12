@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
@@ -13,7 +14,11 @@ import {
   ShieldCheck,
   AlertCircle,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  ClipboardList,
+  Store,
+  ArrowRight,
+  RotateCcw
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -38,12 +43,16 @@ export default function BuyerDashboard() {
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [districtFilter, setDistrictFilter] = useState("");
+  const [selectedCropChip, setSelectedCropChip] = useState("All");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const q = params.get("search");
-      if (q) setSearchTerm(q);
+      if (q) {
+        setSearchTerm(q);
+        setSelectedCropChip(q);
+      }
       const d = params.get("district");
       if (d) setDistrictFilter(d);
     }
@@ -69,7 +78,7 @@ export default function BuyerDashboard() {
   });
 
   // 2. Query: Fetch General Marketplace Listings
-  const { data: listings, isLoading: listingsLoading } = useQuery({
+  const { data: rawListings, isLoading: listingsLoading } = useQuery({
     queryKey: ["marketplace-listings", searchTerm, districtFilter],
     queryFn: () => listingsService.getAllListings({
       crop_type: searchTerm,
@@ -96,11 +105,20 @@ export default function BuyerDashboard() {
     return map;
   }, [myMatches]);
 
+  // Filter listings by selected crop chip if active
+  const listings = useMemo(() => {
+    if (!rawListings) return [];
+    if (selectedCropChip === "All") return rawListings;
+    return rawListings.filter((l) =>
+      l.crop_type.toLowerCase().includes(selectedCropChip.toLowerCase())
+    );
+  }, [rawListings, selectedCropChip]);
+
   // 4. Mutation: The "Handshake" Interest Expression (for AI matches)
   const interestMutation = useMutation({
     mutationFn: ({ matchId, status }: { matchId: number; status: string }) =>
       matchingService.updateMatchStatus(matchId, status),
-    onSuccess: (updatedMatch) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buyer-suggestions"] });
       queryClient.invalidateQueries({ queryKey: ["my-buyer-matches"] });
       toast.success(t.cropCard.interestSent);
@@ -117,7 +135,7 @@ export default function BuyerDashboard() {
       setPendingListingId(listing.id);
       return matchingService.expressInterest({ listing_id: listing.id });
     },
-    onSuccess: (newMatch) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buyer-suggestions"] });
       queryClient.invalidateQueries({ queryKey: ["my-buyer-matches"] });
       toast.success(t.cropCard.interestSent);
@@ -128,6 +146,31 @@ export default function BuyerDashboard() {
       toast.error(err?.response?.data?.detail || "Failed to notify farmer");
     }
   });
+
+  // Quick crop filters
+  const cropChips = [
+    { key: "All", label: t.buyerDashboard.filterAll },
+    { key: "Maize", label: t.liveHarvests.filterMaize },
+    { key: "Beans", label: t.liveHarvests.filterBeans },
+    { key: "Potato", label: t.liveHarvests.filterPotato },
+    { key: "Rice", label: t.liveHarvests.filterRice },
+    { key: "Cassava", label: t.liveHarvests.filterCassava },
+  ];
+
+  const handleChipClick = (key: string) => {
+    setSelectedCropChip(key);
+    if (key === "All") {
+      setSearchTerm("");
+    } else {
+      setSearchTerm(key);
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setDistrictFilter("");
+    setSelectedCropChip("All");
+  };
 
   // Access Control Guard
   if (!userLoading && !isBuyer) {
@@ -140,9 +183,13 @@ export default function BuyerDashboard() {
     );
   }
 
+  const activeMatchesCount = myMatches?.length || 0;
+  const availableHarvestsCount = rawListings?.length || 0;
+  const sourcingHubName = buyerProfile?.base_district || t.common.rwanda;
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* --- Page Header & Sourcing Pulse --- */}
+      {/* --- Page Header & Actions --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t.buyerDashboard.title}</h1>
@@ -151,23 +198,70 @@ export default function BuyerDashboard() {
           </p>
         </div>
 
-        {/* Global Search & District Filter */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+        {/* Action Button: Post Purchase Demand */}
+        <Link
+          href="/dashboard/buyer/requests"
+          className="btn-primary inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl shadow-md active:scale-95 transition text-xs font-bold whitespace-nowrap self-start md:self-auto"
+        >
+          <ClipboardList size={16} />
+          <span>{t.buyerDashboard.postDemandCta}</span>
+        </Link>
+      </div>
+
+      {/* --- Buyer Sourcing KPI Summary Cards --- */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="card p-5 bg-white border border-slate-200 rounded-3xl shadow-sm flex items-center justify-between group hover:border-green-300 transition-all">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.buyerDashboard.statsActiveMatches}</p>
+            <h2 className="text-2xl font-black text-slate-900 mt-1">{activeMatchesCount}</h2>
+            <p className="text-[10px] text-green-700 font-bold mt-1">{t.buyerDashboard.statsActiveMatchesDesc}</p>
+          </div>
+          <div className="p-3 bg-green-50 text-green-700 rounded-2xl group-hover:scale-110 transition-transform">
+            <CheckCircle2 size={24} />
+          </div>
+        </div>
+
+        <div className="card p-5 bg-white border border-slate-200 rounded-3xl shadow-sm flex items-center justify-between group hover:border-blue-300 transition-all">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.buyerDashboard.statsTotalListed}</p>
+            <h2 className="text-2xl font-black text-slate-900 mt-1">{availableHarvestsCount}</h2>
+            <p className="text-[10px] text-blue-700 font-bold mt-1">{t.buyerDashboard.statsTotalListedDesc}</p>
+          </div>
+          <div className="p-3 bg-blue-50 text-blue-700 rounded-2xl group-hover:scale-110 transition-transform">
+            <Store size={24} />
+          </div>
+        </div>
+
+        <div className="card p-5 bg-white border border-slate-200 rounded-3xl shadow-sm flex items-center justify-between group hover:border-amber-300 transition-all">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.buyerDashboard.statsSourcingHub}</p>
+            <h2 className="text-2xl font-black text-slate-900 mt-1">{sourcingHubName}</h2>
+            <p className="text-[10px] text-amber-700 font-bold mt-1">{t.buyerDashboard.statsSourcingHubDesc}</p>
+          </div>
+          <div className="p-3 bg-amber-50 text-amber-700 rounded-2xl group-hover:scale-110 transition-transform">
+            <MapPin size={24} />
+          </div>
+        </div>
+      </div>
+
+      {/* --- Search, District Filter & Quick Crop Chips --- */}
+      <div className="card p-5 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3.5 top-3 text-slate-400" size={16} />
             <input
               type="text"
               placeholder={t.buyerDashboard.searchPlaceholder}
-              className="input-field pl-9 h-10 text-xs w-full bg-white shadow-sm"
+              className="input-field pl-10 h-11 text-sm w-full bg-slate-50 border-slate-200 rounded-2xl focus:bg-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <div className="relative w-full sm:w-48">
-            <MapPin className="absolute left-3 top-2.5 text-slate-400" size={16} />
+          <div className="relative w-full sm:w-60">
+            <MapPin className="absolute left-3.5 top-3 text-slate-400" size={16} />
             <select
-              className="input-field pl-9 h-10 text-xs w-full bg-white shadow-sm"
+              className="input-field pl-10 h-11 text-xs w-full bg-slate-50 border-slate-200 rounded-2xl focus:bg-white font-semibold"
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
             >
@@ -177,6 +271,38 @@ export default function BuyerDashboard() {
               ))}
             </select>
           </div>
+        </div>
+
+        {/* Quick Crop Pills */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mr-1">
+            {t.common.status}:
+          </span>
+          {cropChips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => handleChipClick(chip.key)}
+              className={cn(
+                "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all",
+                selectedCropChip === chip.key
+                  ? "bg-green-700 text-white shadow-sm"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+              )}
+            >
+              {chip.label}
+            </button>
+          ))}
+
+          {(searchTerm || districtFilter || selectedCropChip !== "All") && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="ml-auto inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:underline px-2 py-1"
+            >
+              <RotateCcw size={12} /> {t.buyerDashboard.resetFilters}
+            </button>
+          )}
         </div>
       </div>
 
@@ -196,7 +322,7 @@ export default function BuyerDashboard() {
 
         {suggestionsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => <div key={i} className="h-44 bg-slate-100 animate-pulse rounded-2xl" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="h-44 bg-slate-100 animate-pulse rounded-3xl" />)}
           </div>
         ) : suggestions && suggestions.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -240,11 +366,34 @@ export default function BuyerDashboard() {
 
         {listingsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-2xl" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-3xl" />)}
+          </div>
+        ) : listings.length === 0 ? (
+          <div className="card p-12 text-center bg-white border border-dashed border-slate-200 rounded-3xl space-y-3">
+            <Package className="mx-auto text-slate-300" size={40} />
+            <h3 className="font-bold text-slate-800 text-base">{t.buyerDashboard.emptyMarketplaceTitle}</h3>
+            <p className="text-slate-500 text-xs max-w-md mx-auto leading-relaxed">
+              {t.buyerDashboard.emptyMarketplaceDesc}
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+              >
+                {t.buyerDashboard.resetFilters}
+              </button>
+              <Link
+                href="/dashboard/buyer/requests"
+                className="btn-primary inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl shadow-sm"
+              >
+                {t.buyerDashboard.postDemandCta} <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {listings?.map((listing: Listing) => {
+            {listings.map((listing: Listing) => {
               const existingMatch = matchesByListingId.get(listing.id);
               const isInterested = existingMatch?.status === "interested" || existingMatch?.status === "accepted";
               const isPending = pendingListingId === listing.id;
