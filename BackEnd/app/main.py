@@ -1,3 +1,4 @@
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from slowapi.middleware import SlowAPIMiddleware
 from fastapi import FastAPI, Request
@@ -73,15 +74,35 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(SlowAPIMiddleware)
 
+# --- Global Error Handler to guarantee CORS headers on 500 ---
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc()
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Headers"] = "*"
+        headers["Access-Control-Allow-Methods"] = "*"
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal Server Error: {str(exc)}"},
+        headers=headers,
+    )
+
 # --- Security: CORS Policy ---
 # Keep this as the outermost middleware so CORS headers are added
 # even when inner middleware/routes raise errors.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origin_regex=r"^https?:\/\/.*\.vercel\.app$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 app.include_router(

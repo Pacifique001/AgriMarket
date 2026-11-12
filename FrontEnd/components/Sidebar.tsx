@@ -84,7 +84,7 @@ export function Sidebar() {
       {/* 3. Bottom Actions Section */}
       <div className="p-4 border-t border-green-900 space-y-2">
         <Link 
-          href="/settings" 
+          href="/dashboard/settings" 
           className="flex items-center gap-3 px-3 py-3 text-sm font-bold text-green-400 hover:text-white rounded-xl transition-colors"
         >
           <Settings size={20} />

@@ -43,7 +43,13 @@ def get_farmer_profile(
     ).first()
 
     if not farmer:
-        raise HTTPException(status_code=404, detail="Farmer profile not found")
+        farmer = Farmer(
+            user_id=current_user.id,
+            district="Gasabo"
+        )
+        db.add(farmer)
+        db.commit()
+        db.refresh(farmer)
 
     return {
         "id": farmer.id,
@@ -69,13 +75,34 @@ def update_farmer_profile(
         Farmer.user_id == current_user.id
     ).first()
 
+    if not farmer:
+        farmer = Farmer(
+            user_id=current_user.id,
+            district=profile_in.district or "Gasabo"
+        )
+        db.add(farmer)
+        db.flush()
+
     update_data = profile_in.dict(exclude_unset=True)
     for key, value in update_data.items():
-        setattr(farmer, key, value)
+        if value is not None:
+            setattr(farmer, key, value)
 
     db.commit()
     db.refresh(farmer)
-    return farmer
+    return {
+        "id": farmer.id,
+        "full_name": current_user.full_name,
+        "phone": current_user.phone,
+        "district": farmer.district,
+        "sector": farmer.sector,
+        "village": farmer.village,
+        "farm_size_hectares": farmer.farm_size_hectares,
+        "main_crops": farmer.main_crops,
+        "latitude": farmer.latitude,
+        "longitude": farmer.longitude,
+        "joined_at": farmer.created_at
+    }
 
 # ------------------------------------------------------------------
 # FARMER PERFORMANCE STATS

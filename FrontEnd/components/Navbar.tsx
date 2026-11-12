@@ -177,15 +177,24 @@ export function Navbar() {
           <HelpCircle size={20} />
         </button>
 
-        {/* Help & Support Guide Button */}
-        <button
-          onClick={() => setShowHelp(true)}
-          className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
-          title="SMS & Platform Guide"
-        >
-          <HelpCircle size={20} />
-        </button>
-
+        {/* Help & Support Guide Button */}
+
+        <button
+
+          onClick={() => setShowHelp(true)}
+
+          className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-all focus:outline-none"
+
+          title="SMS & Platform Guide"
+
+        >
+
+          <HelpCircle size={20} />
+
+        </button>
+
+
+
         {/* Notifications Bell with Interactive Dropdown */}
         <div className="relative" ref={notificationRef}>
           <button
@@ -263,7 +272,7 @@ export function Navbar() {
 
               <div className="pt-2 border-t border-slate-100 text-center">
                 <Link
-                  href="/settings"
+                  href="/dashboard/settings"
                   onClick={() => setShowNotifications(false)}
                   className="text-xs font-bold text-green-700 hover:underline inline-flex items-center gap-1"
                 >
@@ -276,7 +285,7 @@ export function Navbar() {
 
         {/* User Identity & Avatar */}
         <Link 
-          href="/settings"
+          href="/dashboard/settings"
           className="flex items-center gap-3 pl-3 border-l border-slate-200 ml-1 hover:opacity-90 transition group"
           title="Account Settings"
         >

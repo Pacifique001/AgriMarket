@@ -42,7 +42,7 @@ def check_buyer_role(current_user: User = Depends(get_current_user)):
 
 class BuyerProfileUpdate(BaseModel):
     company_name: Optional[str] = None
-    buyer_type: Optional[BuyerType] = None
+    buyer_type: Optional[Any] = None
     base_district: Optional[str] = None
     preferred_districts: Optional[str] = Field(
         None, description="Comma-separated list of districts"
@@ -82,14 +82,21 @@ def get_buyer_profile(
     ).first()
 
     if not buyer:
-        raise HTTPException(status_code=404, detail="Buyer profile not found")
+        buyer = Buyer(
+            user_id=current_user.id,
+            base_district="Gasabo",
+            buyer_type=BuyerType.INDIVIDUAL
+        )
+        db.add(buyer)
+        db.commit()
+        db.refresh(buyer)
 
     return {
         "id": buyer.id,
         "full_name": current_user.full_name,
         "phone": current_user.phone,
         "company_name": buyer.company_name,
-        "buyer_type": buyer.buyer_type,
+        "buyer_type": buyer.buyer_type.value if hasattr(buyer.buyer_type, "value") else str(buyer.buyer_type or "individual"),
         "is_verified": buyer.is_verified,
         "base_district": buyer.base_district,
         "preferred_districts": buyer.preferred_districts,
@@ -109,13 +116,41 @@ def update_buyer_profile(
         Buyer.user_id == current_user.id
     ).first()
 
+    if not buyer:
+        buyer = Buyer(
+            user_id=current_user.id,
+            base_district=profile_in.base_district or "Gasabo",
+            buyer_type=BuyerType.INDIVIDUAL
+        )
+        db.add(buyer)
+        db.flush()
+
     update_data = profile_in.dict(exclude_unset=True)
     for key, value in update_data.items():
-        setattr(buyer, key, value)
+        if value is not None:
+            if key == "buyer_type":
+                if isinstance(value, str):
+                    try:
+                        value = BuyerType(value.lower())
+                    except ValueError:
+                        value = BuyerType.INDIVIDUAL
+            setattr(buyer, key, value)
 
     db.commit()
     db.refresh(buyer)
-    return buyer
+    return {
+        "id": buyer.id,
+        "full_name": current_user.full_name,
+        "phone": current_user.phone,
+        "company_name": buyer.company_name,
+        "buyer_type": buyer.buyer_type.value if hasattr(buyer.buyer_type, "value") else str(buyer.buyer_type or "individual"),
+        "is_verified": buyer.is_verified,
+        "base_district": buyer.base_district,
+        "preferred_districts": buyer.preferred_districts,
+        "min_qty": buyer.min_purchase_qty_kg,
+        "max_qty": buyer.max_purchase_qty_kg,
+        "joined_at": buyer.created_at
+    }
 
 # ------------------------------------------------------------------
 # BUYER ANALYTICS
