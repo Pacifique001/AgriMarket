@@ -12,7 +12,8 @@ import {
   Package,
   ShieldCheck,
   AlertCircle,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -20,6 +21,8 @@ import toast from "react-hot-toast";
 import { matchingService, MatchDetail } from "@/services/matching";
 import { listingsService, Listing } from "@/services/listings";
 import { useUser, BuyerProfile } from "@/hooks/useUser";
+import { useLanguage } from "@/context/LanguageContext";
+import { getCropDisplayName } from "@/lib/i18n";
 import { CropCard } from "@/components/CropCard";
 import { BargainModal } from "@/components/BargainModal";
 import { cn } from "@/lib/utils";
@@ -28,6 +31,7 @@ import { RWANDA_DISTRICTS } from "@/lib/constants";
 export default function BuyerDashboard() {
   const queryClient = useQueryClient();
   const { profile, isBuyer, isLoading: userLoading } = useUser();
+  const { t, language } = useLanguage();
 
   const buyerProfile = isBuyer ? (profile as BuyerProfile) : null;
 
@@ -74,7 +78,7 @@ export default function BuyerDashboard() {
     enabled: isBuyer,
   });
 
-  // 3. Query: Fetch All Active Buyer Matches (to persist interest state & enable chat)
+  // 3. Query: Fetch All Active Buyer Matches
   const { data: myMatches } = useQuery({
     queryKey: ["my-buyer-matches"],
     queryFn: matchingService.getMyBuyerMatches,
@@ -99,101 +103,100 @@ export default function BuyerDashboard() {
     onSuccess: (updatedMatch) => {
       queryClient.invalidateQueries({ queryKey: ["buyer-suggestions"] });
       queryClient.invalidateQueries({ queryKey: ["my-buyer-matches"] });
-      toast.success("🚨 Farmer alerted via SMS! You can now negotiate price & place.");
+      toast.success(t.cropCard.interestSent);
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.detail || "Could not process interest.");
-    },
+      toast.error(err?.response?.data?.detail || "Failed to notify farmer");
+    }
   });
 
-  // 5. Mutation: Real Express Interest for General Marketplace Listings
+  // 5. Mutation: Direct interest on un-matched listing
   const [pendingListingId, setPendingListingId] = useState<number | null>(null);
-
   const listingInterestMutation = useMutation({
     mutationFn: async (listing: Listing) => {
       setPendingListingId(listing.id);
-      return await matchingService.expressInterest({
-        listing_id: listing.id
-      });
+      return matchingService.expressInterest({ listing_id: listing.id });
     },
-    onSuccess: (createdMatch, listing) => {
-      queryClient.invalidateQueries({ queryKey: ["marketplace-listings"] });
-      queryClient.invalidateQueries({ queryKey: ["my-buyer-matches"] });
+    onSuccess: (newMatch) => {
       queryClient.invalidateQueries({ queryKey: ["buyer-suggestions"] });
+      queryClient.invalidateQueries({ queryKey: ["my-buyer-matches"] });
+      toast.success(t.cropCard.interestSent);
       setPendingListingId(null);
-      toast.success(`🚨 Farmer alerted via SMS for ${listing.crop_type}! Click Bargain to chat.`);
     },
     onError: (err: any) => {
       setPendingListingId(null);
-      toast.error(err?.response?.data?.detail || "Could not express interest.");
-    },
+      toast.error(err?.response?.data?.detail || "Failed to notify farmer");
+    }
   });
 
-  // Unauthorized view
+  // Access Control Guard
   if (!userLoading && !isBuyer) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
         <AlertCircle className="text-red-500" size={48} />
-        <h2 className="text-xl font-bold text-slate-900">Buyer Access Only</h2>
-        <p className="text-slate-500">Please switch to a buyer account to view the marketplace.</p>
+        <h2 className="text-xl font-bold text-slate-900">{t.buyerDashboard.accessDenied}</h2>
+        <p className="text-slate-500">{t.buyerDashboard.accessDeniedDesc}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* --- Header & Live Search --- */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* --- Page Header & Sourcing Pulse --- */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Marketplace</h1>
-          <p className="text-slate-500 font-medium">
-            Procure quality harvests from {buyerProfile?.base_district || "verified"} farmers.
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t.buyerDashboard.title}</h1>
+          <p className="text-slate-500 font-medium mt-1">
+            {t.buyerDashboard.subtitle}
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full lg:w-auto">
-          <div className="relative flex-1 lg:w-80">
-            <Search className="absolute left-3 top-3 text-slate-400" size={18} />
+        {/* Global Search & District Filter */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
             <input
               type="text"
-              placeholder="Search crops (e.g. Maize)..."
-              className="input-field pl-10"
+              placeholder={t.buyerDashboard.searchPlaceholder}
+              className="input-field pl-9 h-10 text-xs w-full bg-white shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select
-            className="input-field w-40"
-            value={districtFilter}
-            onChange={(e) => setDistrictFilter(e.target.value)}
-          >
-            <option value="">All Districts</option>
-            {RWANDA_DISTRICTS.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+
+          <div className="relative w-full sm:w-48">
+            <MapPin className="absolute left-3 top-2.5 text-slate-400" size={16} />
+            <select
+              className="input-field pl-9 h-10 text-xs w-full bg-white shadow-sm"
+              value={districtFilter}
+              onChange={(e) => setDistrictFilter(e.target.value)}
+            >
+              <option value="">{t.buyerDashboard.allDistricts}</option>
+              {RWANDA_DISTRICTS.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* --- AI Personalized Suggestions Section --- */}
+      {/* --- AI Suggestions Section --- */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="text-green-700" size={20} />
-            <h2 className="text-xl font-bold text-slate-900">AI Matches for You</h2>
-            <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
-              Live Confidence
-            </span>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="text-yellow-500 fill-yellow-500" size={20} />
+              {t.buyerDashboard.aiSuggestionsTitle}
+            </h2>
+            <p className="text-xs text-slate-500 font-medium">
+              {t.buyerDashboard.aiSuggestionsSubtitle}
+            </p>
           </div>
         </div>
 
         {suggestionsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="h-64 bg-slate-100 animate-pulse rounded-2xl border border-slate-200" />
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => <div key={i} className="h-44 bg-slate-100 animate-pulse rounded-2xl" />)}
           </div>
         ) : suggestions && suggestions.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -201,6 +204,8 @@ export default function BuyerDashboard() {
               <SuggestionCard
                 key={match.id}
                 match={match}
+                language={language}
+                t={t}
                 onInterest={() => interestMutation.mutate({ matchId: match.id, status: "interested" })}
                 onChat={() => setActiveChatMatch({
                   matchId: match.id,
@@ -217,10 +222,10 @@ export default function BuyerDashboard() {
             ))}
           </div>
         ) : (
-          <div className="card p-12 text-center bg-slate-50 border-dashed border-2">
+          <div className="card p-12 text-center bg-slate-50 border-dashed border-2 rounded-3xl">
             <Package className="mx-auto text-slate-300 mb-2" size={32} />
-            <p className="text-slate-500 font-medium italic">
-              AI is still scanning the market. Try updating your preferred districts in settings.
+            <p className="text-slate-500 font-medium italic text-xs">
+              {t.buyerDashboard.noSuggestions}
             </p>
           </div>
         )}
@@ -228,14 +233,17 @@ export default function BuyerDashboard() {
 
       {/* --- General Marketplace Section --- */}
       <section className="space-y-4">
-        <h2 className="text-xl font-bold text-slate-900">All Available Harvests</h2>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">{t.buyerDashboard.allHarvestsTitle}</h2>
+          <p className="text-xs text-slate-500 font-medium">{t.buyerDashboard.allHarvestsSubtitle}</p>
+        </div>
 
         {listingsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-xl" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-2xl" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {listings?.map((listing: Listing) => {
               const existingMatch = matchesByListingId.get(listing.id);
               const isInterested = existingMatch?.status === "interested" || existingMatch?.status === "accepted";
@@ -297,35 +305,42 @@ export default function BuyerDashboard() {
 /**
  * Specialized SuggestionCard for AI Handshakes
  */
-function SuggestionCard({ match, onInterest, onChat, isPending }: {
+function SuggestionCard({ match, language, t, onInterest, onChat, isPending }: {
   match: MatchDetail;
+  language: any;
+  t: any;
   onInterest: () => void;
   onChat: () => void;
   isPending: boolean;
 }) {
   const isInterested = match.status === "interested" || match.status === "accepted";
+  const displayCrop = getCropDisplayName(match.crop_type || "Produce", language);
 
   return (
-    <div className="card relative border-green-200 bg-white shadow-sm hover:shadow-md transition-all group overflow-hidden">
-      <div className="absolute top-0 right-0 bg-green-700 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-bl-lg shadow-sm">
-        {Math.round(match.match_score * 100)}% Match
+    <div className="card relative border-green-200 bg-white rounded-3xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+      <div className="absolute top-0 right-0 bg-green-700 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-bl-xl shadow-sm">
+        {Math.round(match.match_score * 100)}% {t.cropCard.match}
       </div>
 
       <div className="p-6">
         <div className="flex items-center gap-2 mb-3 text-green-700">
           <ShieldCheck size={18} className="animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Verified Supplier</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest">{t.buyerDashboard.verifiedSupplier}</span>
         </div>
 
         <h3 className="text-xl font-bold text-slate-900 group-hover:text-green-700 transition-colors">
           {match.other_party_name}
         </h3>
-        <p className="text-slate-500 text-sm flex items-center gap-1 mb-4 font-medium">
+        <p className="text-slate-500 text-sm flex items-center gap-1 mb-2 font-medium">
           <MapPin size={14} className="text-slate-400" /> {match.other_party_district}
         </p>
 
-        <div className="p-3 bg-slate-50 rounded-xl mb-6 border border-slate-100">
-          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">AI Recommendation</p>
+        <p className="text-xs font-bold text-slate-700 mb-4">
+          {displayCrop} • {match.quantity_kg?.toLocaleString()} {t.common.kg} @ {match.asking_price?.toLocaleString()} {t.common.rwfPerKg}
+        </p>
+
+        <div className="p-3 bg-slate-50 rounded-2xl mb-6 border border-slate-100">
+          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">{t.buyerDashboard.aiRecommendation}</p>
           <p className="text-xs font-semibold text-slate-700 leading-relaxed italic">
             "{match.explanation || match.match_reason}"
           </p>
@@ -334,13 +349,13 @@ function SuggestionCard({ match, onInterest, onChat, isPending }: {
         {isInterested ? (
           <div className="flex gap-2">
             <div className="flex-1 py-2.5 rounded-xl bg-green-50 text-green-700 border border-green-200 font-bold text-xs flex items-center justify-center gap-1.5">
-              <CheckCircle2 size={16} /> Alerted
+              <CheckCircle2 size={16} /> {t.cropCard.alerted}
             </div>
             <button
               onClick={onChat}
               className="flex-1 py-2.5 rounded-xl bg-green-700 text-white hover:bg-green-800 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition"
             >
-              <MessageSquare size={16} /> Bargain
+              <MessageSquare size={16} /> {t.cropCard.bargain}
             </button>
           </div>
         ) : (
@@ -356,7 +371,7 @@ function SuggestionCard({ match, onInterest, onChat, isPending }: {
             {isPending ? (
               <Loader2 className="animate-spin" size={16} />
             ) : (
-              <>Express Interest <ShoppingCart size={16} /></>
+              <>{t.cropCard.expressInterest} <ShoppingCart size={16} /></>
             )}
           </button>
         )}

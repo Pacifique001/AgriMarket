@@ -23,6 +23,8 @@ import toast from "react-hot-toast";
 
 import { listingsService, Listing as ServiceListing } from "@/services/listings";
 import { matchingService, MatchDetail } from "@/services/matching";
+import { useLanguage } from "@/context/LanguageContext";
+import { getCropDisplayName } from "@/lib/i18n";
 import { BargainModal } from "@/components/BargainModal";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +34,7 @@ export default function ManageListingPage() {
   const { id } = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t, language } = useLanguage();
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,19 +78,19 @@ export default function ManageListingPage() {
     queryKey: ["listing-matches", id],
     queryFn: () => matchingService.getMatchesForListing(id as string),
     enabled: !!id,
-    refetchInterval: 5000, // Poll every 5s for live buyer alerts!
+    refetchInterval: 5000,
   });
 
-  // 3. Update Match Status Mutation (Accept / Reject)
+  // 3. Update Match Status Mutation
   const updateMatchMutation = useMutation({
     mutationFn: ({ matchId, status }: { matchId: number; status: string }) =>
       matchingService.updateMatchStatus(matchId, status),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["listing-matches", id] });
       if (variables.status === "accepted") {
-        toast.success("Deal Accepted! Buyer has been alerted via SMS.");
+        toast.success(t.bargaining.dealAccepted);
       } else {
-        toast.success("Match updated.");
+        toast.success(t.common.verified);
       }
     },
     onError: (err: any) => {
@@ -106,7 +109,7 @@ export default function ManageListingPage() {
         status: (form.status as "available" | "matched" | "sold") ?? "available",
       });
 
-      toast.success("Listing updated successfully");
+      toast.success(t.manageListing.saveChanges);
       router.refresh();
     } catch (err) {
       console.error(err);
@@ -118,12 +121,12 @@ export default function ManageListingPage() {
 
   // 5. Delete Listing
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this listing?")) return;
+    if (!confirm(t.manageListing.deleteConfirm)) return;
 
     try {
       await listingsService.deleteListing(id as string);
-      toast.success("Listing deleted");
-      router.push("/dashboard/farmer");
+      toast.success(t.manageListing.deleteListing);
+      router.push("/dashboard/farmer/listings");
     } catch (err) {
       console.error(err);
       toast.error("Delete failed");
@@ -140,8 +143,8 @@ export default function ManageListingPage() {
 
   if (!listing) return null;
 
+  const displayCrop = getCropDisplayName(listing.crop_type, language);
   const interestedMatches = matches?.filter(m => m.status === "interested" || m.status === "accepted") || [];
-  const otherMatches = matches?.filter(m => m.status !== "interested" && m.status !== "accepted") || [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12 animate-in fade-in duration-300">
@@ -149,93 +152,72 @@ export default function ManageListingPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.back()}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+            onClick={() => router.push("/dashboard/farmer/listings")}
+            className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition active:scale-95 shadow-sm"
           >
-            <ArrowLeft />
+            <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 className="text-2xl font-black text-slate-900">
-              Manage Harvest – {listing.crop_type}
-            </h1>
-            <p className="text-xs text-slate-500">
-              Listed on {new Date(listing.created_at).toLocaleDateString()} in {listing.district}
-            </p>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">{t.manageListing.title}</h1>
+            <p className="text-xs text-slate-500 font-medium">{displayCrop} • {listing.district}</p>
           </div>
         </div>
 
-        <span className={cn(
-          "px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider",
-          listing.status === "available" && "bg-green-100 text-green-800",
-          listing.status === "matched" && "bg-blue-100 text-blue-800",
-          listing.status === "sold" && "bg-slate-100 text-slate-600"
-        )}>
-          {listing.status}
-        </span>
+        <button
+          onClick={handleDelete}
+          className="btn-danger flex items-center gap-2 text-xs py-2 px-3 rounded-xl shadow-sm"
+        >
+          <Trash2 size={16} /> {t.manageListing.deleteListing}
+        </button>
       </div>
 
-      {/* IMAGE */}
-      {listing.image_url && (
-        <img
-          src={listing.image_url}
-          className="rounded-2xl w-full h-64 object-cover shadow-sm border"
-          alt="crop"
-        />
-      )}
-
-      {/* AI INSIGHT BANNER */}
+      {/* AI Intelligence Snapshot */}
       {listing.ai_suggested_price && (
-        <div className="card p-5 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-sm flex items-start gap-4">
-          <div className="p-3 bg-green-700 text-white rounded-2xl">
+        <div className="card p-6 bg-green-50/60 border border-green-200 rounded-3xl flex items-start gap-4">
+          <div className="p-3 bg-green-700 text-white rounded-2xl shadow-sm">
             <BrainCircuit size={24} />
           </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <p className="font-bold text-green-900 text-sm">AI Market Recommendation</p>
-              <span className="text-xs font-black text-green-700 bg-white px-2.5 py-0.5 rounded-full border border-green-200">
-                AI Suggested: {listing.ai_suggested_price} RWF/kg
-              </span>
-            </div>
-            <p className="text-xs text-green-800 leading-relaxed font-medium">
-              {listing.ai_market_message || "Demand in this region is positive."}
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-green-800 bg-green-100 px-2.5 py-0.5 rounded-full">
+              {t.cropCard.aiSuggested}
+            </span>
+            <h3 className="text-lg font-black text-green-950 mt-1">
+              {listing.ai_suggested_price.toLocaleString()} {t.common.rwfPerKg}
+            </h3>
+            <p className="text-xs text-green-900/80 mt-1 leading-relaxed font-medium">
+              {listing.ai_market_message || "Isesengura ry'isoko ry'aka karere riragaragaza ko igiciro cyifashe neza."}
             </p>
           </div>
         </div>
       )}
 
-      {/* ======================================================================= */}
-      {/* 🚨 CRITICAL NEW FEATURE: INTERESTED BUYERS & NEGOTIATION DEALS SECTION */}
-      {/* ======================================================================= */}
+      {/* INTERESTED BUYERS & NEGOTIATION DEALS SECTION */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="text-green-700" size={22} />
             <h2 className="text-xl font-bold text-slate-900">
-              Buyer Matches & Negotiation Deals
+              {t.manageListing.matchedBuyersTitle}
             </h2>
           </div>
           {interestedMatches.length > 0 && (
             <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider animate-pulse flex items-center gap-1">
-              <Sparkles size={12} /> {interestedMatches.length} Interested Buyer(s)!
+              <Sparkles size={12} /> {interestedMatches.length} {t.common.buyer}(s)!
             </span>
           )}
         </div>
 
         {matchesLoading ? (
-          <div className="card p-8 flex items-center justify-center">
+          <div className="card p-8 flex items-center justify-center rounded-3xl">
             <Loader2 className="animate-spin text-green-700" size={28} />
           </div>
         ) : matches?.length === 0 ? (
-          <div className="card p-8 text-center border-dashed border-2 bg-slate-50 space-y-2">
+          <div className="card p-8 text-center border-dashed border-2 bg-slate-50 space-y-2 rounded-3xl">
             <Users className="mx-auto text-slate-300" size={32} />
-            <p className="text-slate-600 font-bold text-sm">No buyers matched yet.</p>
-            <p className="text-xs text-slate-400">
-              As soon as nearby buyers search or express interest in {listing.crop_type}, they will appear here and you will receive an SMS alert!
-            </p>
+            <p className="text-slate-600 font-bold text-sm">{t.manageListing.noMatchedBuyers}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Show interested buyers first */}
             {matches?.map((match: MatchDetail) => {
               const isInterested = match.status === "interested";
               const isAccepted = match.status === "accepted";
@@ -244,10 +226,10 @@ export default function ManageListingPage() {
                 <div
                   key={match.id}
                   className={cn(
-                    "card p-5 border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4",
+                    "card p-5 border rounded-3xl transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4",
                     isInterested && "border-amber-300 bg-amber-50/40 shadow-sm",
                     isAccepted && "border-green-300 bg-green-50/40 shadow-sm",
-                    !isInterested && !isAccepted && "border-slate-200 bg-white"
+                    !isInterested && !isAccepted && "border-slate-200 bg-white shadow-sm"
                   )}
                 >
                   <div className="space-y-1.5 flex-1">
@@ -257,16 +239,16 @@ export default function ManageListingPage() {
                       </span>
                       {isInterested && (
                         <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                          🚨 Expressed Interest
+                          🚨 {t.cropCard.interestSent}
                         </span>
                       )}
                       {isAccepted && (
                         <span className="bg-green-700 text-white text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                          ✓ Deal Accepted
+                          ✓ {t.bargaining.dealAccepted}
                         </span>
                       )}
-                      <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold">
-                        {Math.round(match.match_score * 100)}% Match
+                      <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                        {Math.round(match.match_score * 100)}% {t.cropCard.match}
                       </span>
                     </div>
 
@@ -280,23 +262,21 @@ export default function ManageListingPage() {
                         </a>
                       )}
                       <span className="text-slate-400">
-                        Match Reason: {match.explanation || match.match_reason || "AI matched volume & location"}
+                        "{match.explanation || match.match_reason || "AI matched volume & location"}"
                       </span>
                     </div>
                   </div>
 
                   {/* Actions for this buyer */}
                   <div className="flex items-center gap-2 w-full md:w-auto">
-                    {/* Bargain / Chat button */}
                     <button
                       type="button"
                       onClick={() => setActiveBargainMatch(match)}
                       className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
                     >
-                      <MessageSquare size={15} /> Bargain / Chat
+                      <MessageSquare size={15} /> {t.manageListing.chatWithBuyer}
                     </button>
 
-                    {/* Accept button */}
                     {!isAccepted && (
                       <button
                         type="button"
@@ -304,11 +284,10 @@ export default function ManageListingPage() {
                         disabled={updateMatchMutation.isPending}
                         className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 bg-green-700 text-white hover:bg-green-800 rounded-xl text-xs font-bold transition shadow-sm active:scale-95 disabled:opacity-50"
                       >
-                        <CheckCircle2 size={15} /> Accept Deal
+                        <CheckCircle2 size={15} /> {t.bargaining.dealAccepted}
                       </button>
                     )}
 
-                    {/* Reject button */}
                     {isInterested && (
                       <button
                         type="button"
@@ -329,50 +308,58 @@ export default function ManageListingPage() {
       </div>
 
       {/* EDIT FORM */}
-      <div className="card p-6 space-y-4 bg-white border border-slate-200">
-        <h2 className="font-bold text-lg text-slate-900">Update Harvest Parameters</h2>
+      <div className="card p-6 space-y-4 bg-white border border-slate-200 rounded-3xl shadow-sm">
+        <h2 className="font-bold text-lg text-slate-900">{t.manageListing.cropDetails}</h2>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="label">Quantity Available (KG)</label>
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+              {t.farmerListings.quantityLabel}
+            </label>
             <input
               type="number"
-              className="input-field"
+              className="input-field text-sm"
               value={form.quantity_kg}
               onChange={(e) => setForm({ ...form, quantity_kg: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="label">Asking Price (RWF / kg)</label>
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+              {t.farmerListings.askingPriceLabel}
+            </label>
             <input
               type="number"
-              className="input-field"
+              className="input-field text-sm"
               value={form.asking_price}
               onChange={(e) => setForm({ ...form, asking_price: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="label">Harvest Date</label>
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+              {t.farmerListings.harvestDateLabel}
+            </label>
             <input
               type="date"
-              className="input-field"
+              className="input-field text-sm"
               value={form.harvest_date}
               onChange={(e) => setForm({ ...form, harvest_date: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="label">Status</label>
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+              {t.common.status}
+            </label>
             <select
-              className="input-field"
+              className="input-field text-sm"
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value as "available" | "matched" | "sold" })}
             >
-              <option value="available">Available</option>
-              <option value="matched">Matched</option>
-              <option value="sold">Sold</option>
+              <option value="available">{t.cropCard.statusAvailable}</option>
+              <option value="matched">{t.cropCard.statusMatched}</option>
+              <option value="sold">{t.cropCard.statusSold}</option>
             </select>
           </div>
         </div>
@@ -380,24 +367,10 @@ export default function ManageListingPage() {
         <button
           onClick={handleUpdate}
           disabled={saving}
-          className="btn-primary w-full flex items-center justify-center gap-2 py-3"
+          className="btn-primary w-full flex items-center justify-center gap-2 py-3 rounded-xl shadow-md active:scale-95 transition"
         >
-          {saving ? <Loader2 className="animate-spin" /> : <Save size={18} />}
-          Save Harvest Updates
-        </button>
-      </div>
-
-      {/* DANGER ZONE */}
-      <div className="card p-5 border-red-200 bg-red-50/50 flex items-center justify-between">
-        <div>
-          <h3 className="font-bold text-red-900 text-sm">Delete Harvest Listing</h3>
-          <p className="text-xs text-red-700">Once deleted, all matches and negotiations will be permanently removed.</p>
-        </div>
-        <button
-          onClick={handleDelete}
-          className="btn-danger flex items-center gap-2 text-xs py-2 px-4"
-        >
-          <Trash2 size={16} /> Delete Listing
+          {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+          {t.manageListing.saveChanges}
         </button>
       </div>
 

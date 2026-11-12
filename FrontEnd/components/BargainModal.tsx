@@ -21,6 +21,8 @@ import toast from "react-hot-toast";
 
 import { messagesService, Message } from "@/services/messages";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/context/LanguageContext";
+import { getCropDisplayName } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface BargainModalProps {
@@ -54,6 +56,7 @@ export function BargainModal({
 }: BargainModalProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const currentUserId = user?.sub ? Number(user.sub) : null;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -63,12 +66,14 @@ export function BargainModal({
   const [offerQuantity, setOfferQuantity] = useState<string>("");
   const [proposedPlace, setProposedPlace] = useState<string>("");
 
+  const displayCrop = getCropDisplayName(listingCrop, language);
+
   // 1. Fetch messages for this match
   const { data: messages, isLoading } = useQuery({
     queryKey: ["messages", matchId],
     queryFn: () => messagesService.getMessages(matchId),
     enabled: isOpen && !!matchId,
-    refetchInterval: isOpen ? 4000 : false, // Poll every 4s while open
+    refetchInterval: isOpen ? 4000 : false,
   });
 
   // Auto-scroll to bottom of messages
@@ -106,11 +111,17 @@ export function BargainModal({
     let messageBody = content.trim();
     if (!messageBody) {
       if (offerPrice && proposedPlace) {
-        messageBody = `I propose ${offerPrice} RWF/kg and delivery/pickup at ${proposedPlace}.`;
+        messageBody = language === "rw"
+          ? `Ntanze igiciro cya ${offerPrice} RWF/kg kandi tuzahurire kuri ${proposedPlace}.`
+          : `I propose ${offerPrice} RWF/kg and pickup/delivery at ${proposedPlace}.`;
       } else if (offerPrice) {
-        messageBody = `I propose a counter price of ${offerPrice} RWF/kg.`;
+        messageBody = language === "rw"
+          ? `Ntanze igiciro cya ${offerPrice} RWF/kg.`
+          : `I propose a counter price of ${offerPrice} RWF/kg.`;
       } else if (proposedPlace) {
-        messageBody = `Proposed meeting place: ${proposedPlace}.`;
+        messageBody = language === "rw"
+          ? `Aho kwakirira umusaruro: ${proposedPlace}.`
+          : `Proposed meeting place: ${proposedPlace}.`;
       }
     }
 
@@ -137,8 +148,8 @@ export function BargainModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-lg leading-tight">{otherPartyName}</h3>
-                <span className="text-[10px] bg-green-800 text-green-200 px-2 py-0.5 rounded-full font-bold uppercase">
-                  {otherPartyRole || "Participant"}
+                <span className="text-[10px] bg-green-800 text-green-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  {otherPartyRole === "Farmer" ? t.common.farmer : otherPartyRole === "Buyer" ? t.common.buyer : otherPartyRole || "Participant"}
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs text-slate-300 mt-0.5 font-medium">
@@ -147,7 +158,7 @@ export function BargainModal({
                     <Phone size={12} /> {otherPartyPhone}
                   </a>
                 )}
-                <span>• {listingCrop} ({listingDistrict || "Rwanda"})</span>
+                <span>• {displayCrop} ({listingDistrict || t.common.rwanda})</span>
               </div>
             </div>
           </div>
@@ -156,9 +167,9 @@ export function BargainModal({
             {onAcceptDeal && currentMatchStatus !== "accepted" && (
               <button
                 onClick={onAcceptDeal}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 text-green-950 hover:bg-yellow-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 text-green-950 hover:bg-yellow-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95"
               >
-                <CheckCircle2 size={14} /> Accept Deal
+                <CheckCircle2 size={14} /> {t.bargaining.dealAccepted}
               </button>
             )}
             <button
@@ -174,21 +185,21 @@ export function BargainModal({
         <div className="bg-slate-50 border-b px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1 font-bold text-slate-800">
-              <Sparkles size={14} className="text-green-600" /> Harvest: {listingCrop}
+              <Sparkles size={14} className="text-green-600" /> {displayCrop}
             </span>
             {listingQuantity && (
-              <span className="flex items-center gap-1">
-                <Scale size={13} className="text-slate-400" /> {listingQuantity.toLocaleString()} kg
+              <span className="flex items-center gap-1 font-medium">
+                <Scale size={13} className="text-slate-400" /> {listingQuantity.toLocaleString()} {t.common.kg}
               </span>
             )}
             {listingAskingPrice && (
-              <span className="flex items-center gap-1">
-                <DollarSign size={13} className="text-slate-400" /> Asking: {listingAskingPrice.toLocaleString()} RWF/kg
+              <span className="flex items-center gap-1 font-medium">
+                <DollarSign size={13} className="text-slate-400" /> {t.bargaining.askingPriceLabel} {listingAskingPrice.toLocaleString()} {t.common.rwfPerKg}
               </span>
             )}
           </div>
-          <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold uppercase">
-            Status: {currentMatchStatus || "negotiating"}
+          <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+            {currentMatchStatus === "accepted" ? t.common.verified : t.common.status}: {currentMatchStatus || "negotiating"}
           </span>
         </div>
 
@@ -203,10 +214,9 @@ export function BargainModal({
               <div className="p-3 bg-green-50 text-green-700 rounded-full">
                 <MessageSquare size={32} />
               </div>
-              <h4 className="font-bold text-slate-800 text-base">Direct Negotiation Channel</h4>
+              <h4 className="font-bold text-slate-800 text-base">{t.bargaining.title}</h4>
               <p className="text-xs text-slate-500 max-w-sm">
-                Discuss price, negotiate payment terms, and agree on a pickup or delivery place.
-                Messages are alert-enabled via SMS.
+                {t.bargaining.subtitle}
               </p>
             </div>
           ) : (
@@ -221,7 +231,7 @@ export function BargainModal({
                   )}
                 >
                   <span className="text-[10px] text-slate-400 mb-1 px-1 font-semibold">
-                    {isMe ? "You" : msg.sender_name || otherPartyName} •{" "}
+                    {isMe ? (language === "rw" ? "Wowe" : "You") : msg.sender_name || otherPartyName} •{" "}
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
 
@@ -246,22 +256,22 @@ export function BargainModal({
                         )}
                       >
                         <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider">
-                          <DollarSign size={12} /> Bargain Proposal
+                          <DollarSign size={12} /> {t.bargaining.sendDealOffer}
                         </div>
                         {msg.offered_price && (
                           <div className="flex items-center gap-1.5">
-                            <span>Offered Price:</span>
-                            <span className="font-black text-sm">{msg.offered_price.toLocaleString()} RWF/kg</span>
+                            <span>{t.bargaining.myOfferPrice}:</span>
+                            <span className="font-black text-sm">{msg.offered_price.toLocaleString()} {t.common.rwfPerKg}</span>
                           </div>
                         )}
                         {msg.offered_quantity && (
                           <div className="flex items-center gap-1.5 text-xs opacity-90">
-                            <Scale size={12} /> Quantity: {msg.offered_quantity.toLocaleString()} kg
+                            <Scale size={12} /> {t.bargaining.myOfferQty}: {msg.offered_quantity.toLocaleString()} {t.common.kg}
                           </div>
                         )}
                         {msg.proposed_location && (
                           <div className="flex items-center gap-1.5 text-xs opacity-90">
-                            <MapPin size={12} /> Meeting Place: {msg.proposed_location}
+                            <MapPin size={12} /> {t.bargaining.meetingPlace}: {msg.proposed_location}
                           </div>
                         )}
                       </div>
@@ -282,7 +292,7 @@ export function BargainModal({
             className="flex items-center gap-1.5 font-bold text-green-700 hover:text-green-800 transition"
           >
             <DollarSign size={15} />
-            {showBargainTools ? "Hide Bargaining Fields" : "Attach Price / Location Offer"}
+            {t.bargaining.offerToolsButton}
             {showBargainTools ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
           <span className="text-[10px] text-slate-400 font-medium">SMS Alerts Active</span>
@@ -293,7 +303,7 @@ export function BargainModal({
           <div className="px-4 py-3 bg-green-50/70 border-t border-green-100 grid grid-cols-1 sm:grid-cols-3 gap-2.5 animate-in slide-in-from-bottom duration-200">
             <div>
               <label className="text-[10px] font-black uppercase tracking-wider text-green-900 block mb-1">
-                Your Price Offer (RWF/kg)
+                {t.bargaining.myOfferPrice}
               </label>
               <input
                 type="number"
@@ -305,7 +315,7 @@ export function BargainModal({
             </div>
             <div>
               <label className="text-[10px] font-black uppercase tracking-wider text-green-900 block mb-1">
-                Quantity (kg)
+                {t.bargaining.myOfferQty}
               </label>
               <input
                 type="number"
@@ -317,7 +327,7 @@ export function BargainModal({
             </div>
             <div>
               <label className="text-[10px] font-black uppercase tracking-wider text-green-900 block mb-1">
-                Meeting / Delivery Place
+                {t.bargaining.meetingPlace}
               </label>
               <input
                 type="text"
@@ -334,11 +344,7 @@ export function BargainModal({
         <form onSubmit={handleSend} className="p-3 md:p-4 bg-white border-t flex items-center gap-2">
           <input
             type="text"
-            placeholder={
-              showBargainTools
-                ? "Add an optional negotiation note..."
-                : "Type message to bargain on price, place, or dates..."
-            }
+            placeholder={t.bargaining.typeMessagePlaceholder}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="flex-1 input-field py-2.5 text-sm"
@@ -349,7 +355,7 @@ export function BargainModal({
             className="btn-primary py-2.5 px-4 rounded-xl flex items-center gap-1.5 shadow-md disabled:opacity-50"
           >
             {sendMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-            <span className="hidden sm:inline">Send</span>
+            <span className="hidden sm:inline">{t.bargaining.sendButton}</span>
           </button>
         </form>
       </div>

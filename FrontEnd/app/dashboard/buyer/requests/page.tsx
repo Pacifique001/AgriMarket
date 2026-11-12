@@ -17,13 +17,16 @@ import {
   ArrowRight,
   AlertCircle,
   TrendingUp,
-  MessageSquare
+  MessageSquare,
+  DollarSign
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 // Modular Services & Hooks
 import { matchingService } from "@/services/matching";
 import { useUser, BuyerProfile } from "@/hooks/useUser";
+import { useLanguage } from "@/context/LanguageContext";
+import { getCropDisplayName } from "@/lib/i18n";
 import { BargainModal } from "@/components/BargainModal";
 import { cn } from "@/lib/utils";
 import api from "@/services/api";
@@ -42,12 +45,13 @@ type RequestFormValues = z.infer<typeof requestSchema>;
 export default function BuyerRequestsPage() {
   const queryClient = useQueryClient();
   const { isBuyer, isLoading: userLoading, profile } = useUser();
+  const { t, language } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeBargainMatch, setActiveBargainMatch] = useState<any>(null);
 
   const buyerProfile = isBuyer ? (profile as BuyerProfile) : null;
 
-  // 2. Query: Fetch active procurement matches (Demand-based suggestions)
+  // 2. Query: Fetch active procurement matches
   const { data: requests, isLoading: requestsLoading } = useQuery({
     queryKey: ["buyer-requests"],
     queryFn: matchingService.getBuyerSuggestions,
@@ -70,7 +74,7 @@ export default function BuyerRequestsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buyer-requests"] });
-      toast.success("Demand broadcasted! AI is scanning farmer listings.");
+      toast.success(t.common.verified);
       setIsModalOpen(false);
       reset();
     },
@@ -84,8 +88,8 @@ export default function BuyerRequestsPage() {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
         <AlertCircle className="text-red-500" size={48} />
-        <h2 className="text-xl font-bold">Buyer Access Only</h2>
-        <p className="text-slate-500">Please log in as a buyer to manage procurement requests.</p>
+        <h2 className="text-xl font-bold">{t.buyerDashboard.accessDenied}</h2>
+        <p className="text-slate-500">{t.buyerDashboard.accessDeniedDesc}</p>
       </div>
     );
   }
@@ -94,14 +98,14 @@ export default function BuyerRequestsPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Procurement Requests</h1>
-          <p className="text-slate-500 text-sm font-medium">Active demands being matched by AI.</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t.procurement.title}</h1>
+          <p className="text-slate-500 text-sm font-medium mt-1">{t.procurement.subtitle}</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="btn-primary flex items-center gap-2 shadow-lg"
+          className="btn-primary flex items-center justify-center gap-2 shadow-lg px-5 py-3 rounded-xl active:scale-95 transition"
         >
-          <Plus size={18} /> Post New Demand
+          <Plus size={18} /> {t.procurement.postDemandButton}
         </button>
       </div>
 
@@ -113,65 +117,69 @@ export default function BuyerRequestsPage() {
       ) : (
         <div className="space-y-4">
           {requests?.length === 0 ? (
-            <div className="card p-16 text-center border-dashed border-2 flex flex-col items-center justify-center">
+            <div className="card p-16 text-center border-dashed border-2 rounded-3xl flex flex-col items-center justify-center">
               <div className="p-4 bg-slate-50 rounded-full mb-4">
                 <ClipboardList className="text-slate-300" size={40} />
               </div>
-              <p className="text-slate-500 font-bold">No active procurement matches.</p>
-              <p className="text-slate-400 text-sm mt-1 mb-6">Broadcast your needs to get AI farmer matches.</p>
+              <p className="text-slate-700 font-bold text-lg">{t.procurement.noRequestsTitle}</p>
+              <p className="text-slate-400 text-sm mt-1 mb-6 max-w-sm">{t.procurement.noRequestsDesc}</p>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="text-green-700 font-black text-sm flex items-center gap-2 hover:underline"
+                className="btn-primary inline-flex items-center gap-2 px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition"
               >
-                Create your first request <ArrowRight size={16} />
+                {t.procurement.postDemandButton} <ArrowRight size={16} />
               </button>
             </div>
           ) : (
-            requests?.map((match: any) => (
-              <div key={match.id} className="card p-6 hover:border-green-300 transition-all flex flex-col md:flex-row gap-6 items-start md:items-center group">
-                <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <ClipboardList size={24} />
-                </div>
+            requests?.map((match: any) => {
+              const cropRaw = match.crop_type || match.listing?.crop_type || "Harvest";
+              const displayCrop = getCropDisplayName(cropRaw, language);
+              return (
+                <div key={match.id} className="card p-6 rounded-3xl hover:border-green-300 transition-all flex flex-col md:flex-row gap-6 items-start md:items-center group shadow-sm bg-white">
+                  <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <ClipboardList size={24} />
+                  </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-lg font-bold text-slate-900">
-                      Demand for {match.crop_type || match.listing?.crop_type || "Harvest"}
-                    </h3>
-                    <span className={cn(
-                      "text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest border",
-                      match.status === "interested" ? "bg-green-50 text-green-700 border-green-100" : "bg-blue-50 text-blue-700 border-blue-100"
-                    )}>
-                      {match.status}
-                    </span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-lg font-bold text-slate-900">
+                        {displayCrop}
+                      </h3>
+                      <span className={cn(
+                        "text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-widest border",
+                        match.status === "interested" ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"
+                      )}>
+                        {match.status === "interested" ? t.cropCard.interestSent : match.status}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500 font-medium">
+                      <span className="flex items-center gap-1.5">
+                        <Scale size={14} className="text-slate-400" /> {(match.quantity_kg || match.listing?.quantity_kg || 0).toLocaleString()} {t.common.kg}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <MapPin size={14} className="text-slate-400" /> {match.other_party_district}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Clock size={14} className="text-slate-400" /> {new Date(match.created_at).toLocaleDateString(language === "rw" ? "rw-RW" : "en-US")}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500 font-medium">
-                    <span className="flex items-center gap-1.5">
-                      <Scale size={14} className="text-slate-400" /> {(match.quantity_kg || match.listing?.quantity_kg || 0).toLocaleString()} kg
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <MapPin size={14} className="text-slate-400" /> {match.other_party_district}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Clock size={14} className="text-slate-400" /> {new Date(match.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="w-full md:w-auto flex flex-col items-end gap-3">
-                  <div className="flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-xl border border-green-100">
-                    <BrainCircuit size={16} className="text-green-700" />
-                    <span className="text-xs font-black text-green-800">AI Match: {Math.round(match.match_score * 100)}%</span>
+                  <div className="w-full md:w-auto flex flex-col items-end gap-3">
+                    <div className="flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-xl border border-green-100">
+                      <BrainCircuit size={16} className="text-green-700" />
+                      <span className="text-xs font-black text-green-800">{t.cropCard.match}: {Math.round(match.match_score * 100)}%</span>
+                    </div>
+                    <button
+                      onClick={() => setActiveBargainMatch(match)}
+                      className="w-full md:w-fit px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <MessageSquare size={14} /> {t.cropCard.bargain}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setActiveBargainMatch(match)}
-                    className="w-full md:w-fit px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-sm"
-                  >
-                    <MessageSquare size={14} /> Negotiate / Bargain
-                  </button>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
@@ -182,83 +190,85 @@ export default function BuyerRequestsPage() {
           <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
             <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-700 text-white rounded-lg">
+                <div className="p-2 bg-green-700 text-white rounded-xl">
                   <TrendingUp size={20} />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900">Broadcast Demand</h2>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">{t.procurement.modalTitle}</h2>
+                  <p className="text-xs text-slate-500">{t.procurement.modalSubtitle}</p>
+                </div>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
-                <X size={24} />
+                <X size={22} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit((data) => postRequestMutation.mutate(data))} className="p-8 space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Crop Type</label>
-                  <select {...register("crop_type")} className="input-field">
-                    <option value="">Select Crop</option>
-                    <option value="Maize">Maize</option>
-                    <option value="Beans">Beans</option>
-                    <option value="Potato">Potato</option>
-                    <option value="Rice">Rice</option>
-                  </select>
-                  {errors.crop_type && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.crop_type.message}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Sourcing District</label>
-                  <select {...register("preferred_district")} className="input-field">
-                    <option value="">Select District</option>
-                    {RWANDA_DISTRICTS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
+            <form onSubmit={handleSubmit((data) => postRequestMutation.mutate(data))} className="p-6 md:p-8 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.procurement.cropTypeLabel}</label>
+                  <select {...register("crop_type")} className="input-field text-sm">
+                    <option value="">{t.procurement.selectCrop}</option>
+                    {CROP_OPTIONS.map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {getCropDisplayName(c.name, language)}
                       </option>
                     ))}
                   </select>
-                  {errors.preferred_district && <p className="text-[10px] text-red-500 font-bold ml-1">{errors.preferred_district.message}</p>}
+                  {errors.crop_type && <p className="text-[11px] text-red-500 font-medium">{errors.crop_type.message}</p>}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.procurement.preferredDistrict}</label>
+                  <select {...register("preferred_district")} className="input-field text-sm">
+                    <option value="">{t.farmerListings.selectDistrict}</option>
+                    {RWANDA_DISTRICTS.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                  {errors.preferred_district && <p className="text-[11px] text-red-500 font-medium">{errors.preferred_district.message}</p>}
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Volume Needed (KG)</label>
-                <div className="relative">
-                  <Scale className="absolute left-3 top-3.5 text-slate-400" size={18} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.procurement.requiredVolume}</label>
                   <input
                     type="number"
+                    placeholder="e.g. 5000"
                     {...register("required_kg", { valueAsNumber: true })}
-                    className="input-field pl-10"
-                    placeholder="e.g., 5000"
+                    className="input-field text-sm"
                   />
+                  {errors.required_kg && <p className="text-[11px] text-red-500 font-medium">{errors.required_kg.message}</p>}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t.procurement.budgetPrice}</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 350"
+                    {...register("max_price_per_kg", { valueAsNumber: true })}
+                    className="input-field text-sm"
+                  />
+                  {errors.max_price_per_kg && <p className="text-[11px] text-red-500 font-medium">{errors.max_price_per_kg.message}</p>}
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Max Budget (RWF/kg)</label>
-                <input
-                  type="number"
-                  {...register("max_price_per_kg", { valueAsNumber: true })}
-                  className="input-field text-lg font-black text-green-700"
-                />
-              </div>
-
-              <div className="flex gap-4 pt-6">
+              <div className="pt-4 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-3.5 font-bold text-slate-600 hover:bg-slate-50 rounded-2xl transition-colors"
+                  className="flex-1 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition text-sm"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={postRequestMutation.isPending}
-                  className="flex-1 btn-primary py-3.5 flex items-center justify-center gap-2 rounded-2xl shadow-lg"
+                  className="flex-1 btn-primary py-3 rounded-xl font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition text-sm"
                 >
-                  {postRequestMutation.isPending ? (
-                    <Loader2 className="animate-spin" size={20} />
-                  ) : (
-                    <>Broadcast to Farmers <ArrowRight size={18} /></>
-                  )}
+                  {postRequestMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
+                  {t.procurement.broadcastCta}
                 </button>
               </div>
             </form>
@@ -266,7 +276,7 @@ export default function BuyerRequestsPage() {
         </div>
       )}
 
-      {/* --- Bargain & Chat Modal for Buyer Requests --- */}
+      {/* --- Bargain & Chat Modal --- */}
       {activeBargainMatch && (
         <BargainModal
           isOpen={!!activeBargainMatch}
@@ -276,7 +286,7 @@ export default function BuyerRequestsPage() {
           listingQuantity={activeBargainMatch.quantity_kg || activeBargainMatch.listing?.quantity_kg}
           listingAskingPrice={activeBargainMatch.asking_price || activeBargainMatch.listing?.asking_price}
           listingDistrict={activeBargainMatch.other_party_district}
-          otherPartyName={activeBargainMatch.other_party_name || "Farmer"}
+          otherPartyName={activeBargainMatch.other_party_name}
           otherPartyPhone={activeBargainMatch.other_party_phone}
           otherPartyRole="Farmer"
           currentMatchStatus={activeBargainMatch.status}

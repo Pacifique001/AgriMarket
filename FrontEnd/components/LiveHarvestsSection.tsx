@@ -21,13 +21,14 @@ import {
 import { listingsService, Listing } from "@/services/listings";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/context/LanguageContext";
+import { getCropDisplayName } from "@/lib/i18n";
 import { getCropImageUrl } from "@/lib/crop-images";
 import { cn } from "@/lib/utils";
 
 export function LiveHarvestsSection() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedCropFilter, setSelectedCropFilter] = useState<string>("All");
   const [activeModalListing, setActiveModalListing] = useState<Listing | null>(null);
 
@@ -156,7 +157,7 @@ export function LiveHarvestsSection() {
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="text-lg font-black text-slate-900 group-hover:text-green-700 transition-colors">
-                          {listing.crop_type}
+                          {getCropDisplayName(listing.crop_type, language)}
                         </h3>
                         <span className="text-xs font-black text-green-700 bg-green-50 px-2 py-0.5 rounded-lg">
                           {listing.asking_price.toLocaleString()} {t.common.rwfPerKg}
@@ -234,7 +235,7 @@ export function LiveHarvestsSection() {
                   {t.liveHarvests.modalBadge}
                 </span>
                 <h3 className="text-xl font-extrabold text-slate-900 mt-1">
-                  {t.liveHarvests.modalTitlePrefix} {activeModalListing.crop_type}?
+                  {t.liveHarvests.modalTitlePrefix} {getCropDisplayName(activeModalListing.crop_type, language)}?
                 </h3>
               </div>
             </div>
@@ -243,7 +244,7 @@ export function LiveHarvestsSection() {
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-slate-200">
                 <span className="text-slate-500 font-bold">{t.liveHarvests.cropLabel}</span>
-                <span className="font-extrabold text-slate-900">{activeModalListing.crop_type}</span>
+                <span className="font-extrabold text-slate-900">{getCropDisplayName(activeModalListing.crop_type, language)}</span>
               </div>
               <div className="flex justify-between items-center pb-2 border-b border-slate-200">
                 <span className="text-slate-500 font-bold">{t.liveHarvests.quantityLabel}</span>
